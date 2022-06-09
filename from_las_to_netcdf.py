@@ -23,9 +23,6 @@ def ref_and_crop(z_range='[-5:0.5]',crop_corners='([-20, -1], [-5, 5])',path_to_
     file_list = [os.path.normpath(i) for i in file_list]
     file_list.sort()
 
-
-
-    i = 8055
     for file in file_list:
 
         pip_filter_json = json.dumps(
@@ -57,7 +54,7 @@ def ref_and_crop(z_range='[-5:0.5]',crop_corners='([-20, -1], [-5, 5])',path_to_
             })
         pipeline = pdal.Pipeline(pip_filter_json)
         pipeline.execute()
-        print("fichier : "+ file.split('\\')[-1]+" traité")
+        print("file : "+ file.split('\\')[-1]+" processed")
 
 
 
@@ -102,29 +99,7 @@ def laz_to_tif(GSD= 0.1, origin_x=-20,origin_y=-4.5,height=10,width=20,method='p
             pipeline.execute()
             i-=1
 
-            print("reste :"+ str(i) +" fichier : "+ file.split('\\')[-1][:-4] + " traité")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            print("remaining :"+ str(i) +" files : "+ file.split('\\')[-1][:-4] + " processed")
 
 
 
@@ -181,7 +156,7 @@ def tif_to_ds(path_to_data=r'C:\Users\Gaspard\Documents\Ecole\5_Centrale\Cours\P
         fname_nc = path_to_data + '\\NC\\' + meta.tst.loc[meta.tst.dt.strftime('%m-%d')==date].iloc[0].strftime(filename_format)
 
         geotiffs_ds.to_netcdf(fname_nc, engine = "h5netcdf")
-        print('Reste : '+ str(i) + 'File saved: ', fname_nc)
+        print('Remaining : '+ str(i) + 'File saved: ', fname_nc)
         i-=1
         # clear memory cache before next loop
         geotiffs_da = None
@@ -196,3 +171,6 @@ if __name__ == '__main__':
         #path_to_data
         ref_and_crop(path_to_data = path_to_data)
         laz_to_tif()
+
+        #doesn't work, conflict in librairies
+        tif_to_ds()
