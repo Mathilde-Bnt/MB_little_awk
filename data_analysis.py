@@ -6,6 +6,14 @@ Created on Fri Feb 25 10:09:39 2022
 @author: Lucas & Gaspard
 """
 
+#%% Cell 0 ##
+
+## module to install
+## =================
+
+# pip install xarray
+# pip install netCDF4
+
 #%% Cell 1 ##
 
 ## Importing modules
@@ -45,6 +53,8 @@ y_index = 48  # value of y as an index
 
 # Time interval over which the average is calculated to define the altitude of the point studied in summer
 dt = 100
+#start
+#end
 
 # parameters for smoothing
 time_parameter    = 11 # the time median is performed on time_parameter points
@@ -62,7 +72,7 @@ value_width_falls = 0.1
 # ===========================
 
 # Loading
-path = r'.\data\NC\2022*.nc' #\2022*.nc allows to analyse only data from January, which makes calculations easier
+path = r'C:\Users\lucas\OneDrive\Bureau\ECL\UE\PAr\netcdf\petit\2021*.nc' #\2022*.nc allows to analyse only data from January, which makes calculations easier
 
 ds_initial = xr.open_mfdataset(path) # dataset that will not be modified
 ds = ds_initial                      # dataset that we will modify
@@ -116,30 +126,39 @@ y_index = d_n('y',y_distance_in_ds)
 # ========================
 
 # Definition of the summer altitude to define too small outliers
-def average_beginning_curve(dt) : # dt = time over which we will take an average
+def average_beginning_curve(dt,ds,x_index,y_index) : # dt = time over which we will take an average
     '''the altitude at a point (x,y) is defined as the average height over a period dt during the summer'''
     list_of_beginning_values = ds['mean'].isel(x=x_index,y=y_index).to_numpy()[:dt]
     newlist = [x for x in list_of_beginning_values if np.isnan(x) == False]
     average = np.mean(newlist)
     return(average)
 
+def average_bis(ds,start,end) :
+    dd = ds['mean'].sel(time = slice(start,end)).mean(dim = 'time')
+    return(dd.compute())
+
+# ne plus passer en numpy
+# faire une time range 
+    
+    
 # Removal of outliers
-def outliers(ds) :
+def remove_outliers(ds,start,end) :
     '''we start by removing the extreme and therefore aberrant values from the dataset'''
 
     # Definition of the minimum snow altitude not to be exceeded
-    down_safety_interval  = 10  # delete the values that are 10 cm below the average calculated on the first values
-    low_limit = average_beginning_curve(dt) - down_safety_interval
+    down_safety_interval  = 0.1  # delete the values that are 10 cm below the average calculated on the first values
+    average = average_bis(ds,start,end)
+    low_limit =  average - down_safety_interval
 
     # Definition de l'altitude maximale de neige supposee n'etre pas depassee
-    up_safety_interval = 3
-    limit_high = average_beginning_curve(dt) + up_safety_interval
+    up_safety_interval = 4  # en m
+    limit_high = average + up_safety_interval
 
     # Suppression des valeurs aberrantes
-    ds_extreme_values = ds.where(ds['mean'] < limit_high)
-    ds_extreme_values = ds.where(ds['mean'] > low_limit)
+    ds_clean = ds.where(ds['mean'] < limit_high)
+    ds_clean = ds.where(ds['mean'] > low_limit)
 
-    return(ds_extreme_values)
+    return(ds_clean)
 
 
 #%% Cell 6 ##
@@ -150,7 +169,7 @@ def outliers(ds) :
 # Filtre median temporel
 def median_time_filter(ds, time_parameter) :
     '''on applique une mediane de fenêtre glissante sur un nombre de points time_parameter'''
-    ds_median_time_filter = ds.rolling(time=time_parameter, center=True).median()
+    ds_median_time_filter = ds.rolling(time=time_parameter, center=True).median(dim = 'time')
     return(ds_median_time_filter)
 
 # Filtre median en espace
@@ -158,11 +177,13 @@ def median_space_filter(ds , space_parameter_x , space_parameter_y) :
     '''on applique une mediane de fenêtre glissante sur un nombre de points
     - space_parameter_x selon x
     - space_parameter_y selon y '''
-    ds_median_space_filter = ds.rolling({'x':space_parameter_x,'y':space_parameter_y}, center=True).median()
+    ds_median_space_filter = ds.rolling({'x':space_parameter_x,'y':space_parameter_y}, center=True).median(dim = ['x','y'])
     return(ds_median_space_filter)
 
-ds_extreme_values = outliers(ds)
-ds_median_time_filter  = median_time_filter (ds_extreme_values, time_parameter)
+# a rectifier
+
+ds_clean = remove_outliers(ds,start,end)
+ds_median_time_filter  = median_time_filter (ds_clean, time_parameter)
 ds_median_space_filter = median_space_filter(ds_median_time_filter, space_parameter_x , space_parameter_y)
 
 
@@ -186,12 +207,20 @@ ds_median_space_filter = ds_median_space_filter.assign(opposite_second_derivativ
 peaks_pics, properties = find_peaks(ds_median_space_filter['opposite_second_derivative'], prominence=value_prominence_falls, width=value_width_falls)
 
 # Converting indices into dates
+list_time_pics = sd.isel(time=peaks_pics).time
+
+'''
 list_dates_axis_abscisses = sd.coords['time'].values
 list_time_pics = []
 for i in peaks_pics:
     list_time_pics.append(list_dates_axis_abscisses[i])
+'''
 
 # Recovering the snow height at the peaks
+'''
+order_pics = sd.isel(time=peaks_pics)['mean']
+order_pics_second_derivative = sd.isel(time=peaks_pics)['mean']
+'''
 order_pics = []
 order_pics_second_derivative = []
 for i in peaks_pics:
@@ -202,7 +231,7 @@ for i in peaks_pics:
 # Recovery of the beginning of the snowfall with second drift
 # ===========================================================
 
-ds_median_space_filter = ds_median_space_filter.assign(second_derivative = second_derivative_np)  # on inverse la dérivée pour obtenir les min
+ds_median_space_filter = ds_median_space_filter.assign(second_derivative = second_derivative_np) 
 
 # Recovering peak indices in dataset
 peaks_falls, properties = find_peaks(ds_median_space_filter['second_derivative'], prominence=value_prominence_falls, width=value_width_falls)
@@ -222,7 +251,7 @@ for i in peaks_falls:
 
 
 
-#%% Cell 8 ##
+#%% Cell 8 ## dunes filtering using first derivative
 
 ## point qui ne vont pas derivee premiere
 # =======================================
@@ -232,15 +261,13 @@ value_prominence_falls_first_derivative = 0.022
 value_width_falls_first_derivative = 0.5
 
 sd = ds_median_space_filter['mean'].isel(x=x_index,y=y_index)
-first_derivative_np = np.gradient(sd)
-second_derivative_np = np.gradient(first_derivative_np)
 
 
 # recupération de spoints problématiques avec la derivee premiere
 # ====================================
 
 ds_median_space_filter = ds_median_space_filter.assign(opposite_first_derivative = - first_derivative_np)  # the derivative is inverted to obtain the minimums
-ds_median_space_filter = ds_median_space_filter.assign(first_derivative = first_derivative_np)  # the derivative is inverted to obtain the minimums
+ds_median_space_filter = ds_median_space_filter.assign(first_derivative = first_derivative_np) 
 
 # Recovering peak indices in dataset
 peaks_pics_first_derivative, properties_first_derivative = find_peaks(ds_median_space_filter['opposite_first_derivative'], prominence=value_prominence_falls_first_derivative, width=valeur_width_pics_first_derivative)
@@ -249,7 +276,6 @@ peaks_pics_first_derivative, properties_first_derivative = find_peaks(ds_median_
 
 # Recovery of snow height
 order_first = []
-
 for i in peaks_pics_first_derivative:
     order_first.append(ds_median_space_filter['first_derivative'][i].to_numpy())
 
