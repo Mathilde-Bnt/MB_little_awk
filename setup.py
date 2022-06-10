@@ -8,17 +8,17 @@ with open(path.join(this_directory, 'README.md')) as f:
     long_description = f.read()
 
 setup(
-    name='projimdem',
+    name='little_awk',
     version='0.0.1',
-    description='A Python project to perfrom resection and project image on DEM',
+    description='A Python project to process time-lapse lidar data and extract snowpack stratigraphy',
     long_description=long_description,
 
     # The project's main homepage.
     url='https://github.com/luc-girod/ProjectImageToDEM',
 
     # Author details
-    author=['Simon Filhol','Luc Girod'],
-    author_email=['simon.filhol@geo.uio.no','luc.girod@geo.uio.no'],
+    author=['Simon Filhol', 'Luc Girod', 'Lucas Geffroy', 'Gaspard Boraud'],
+    author_email=['simon.filhol@geo.uio.no'],
 
     # Choose your license
     license='MIT',
@@ -44,9 +44,9 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords=['photogrammetry','GIS', 'image'],
+    keywords=['lidar', 'time-lapse'],
     packages=find_packages(),
-    install_requires=['matplotlib', 'pandas', 'numpy', 'gdal', 'scipy', 'geopandas', 'plyfile'],
+    install_requires=['matplotlib', 'xarray', 'datetime',  'pandas', 'numpy', 'gdal', 'pdal', 'scipy', 'geopandas', 'plyfile'],
     include_package_data=True
 
 )
