@@ -4,6 +4,10 @@ Original work from S. Filhol and L. Girod, March 2021
 Modified by Gaspard and Lucas, March 2022
 Modified S. Filhol, June 2022
 
+TODO:
+- add function to convert .bin to .las
+- add metadata field in netcdf file
+
 """
 
 import glob
@@ -13,6 +17,29 @@ import pandas as pd
 import pdal
 import tqdm
 import xarray as xr
+import openpylivox as opl
+
+
+def convert_bin_to_las(path_to_data='/home/data/',
+                       file_pattern='*.bin'):
+    '''
+    Function to convert Livox .bin file to the open file format .las
+    Args:
+        path_to_data: path to data directory
+        file_pattern: glob style file pattern
+
+    Returns:
+
+    Todo:
+    - adapt function to little_awk
+    - test function
+    '''
+    file_list = glob.glob(path_to_data + '*.bin')
+    for file in file_list:
+        opl.convertBin2LAS(file, deleteBin=False)
+        os.remove(file)
+        os.rename(file+'.las', file[:-4]+'.las')
+        print(file, ' removed and las renamed.')
 
 
 def rotate_crop_filter_pcl(z_range=[-6, 1],
@@ -131,6 +158,11 @@ def tif_to_netcdf(project_dir='to/my/project/',
 
     Returns:
         save netcdf file
+
+    Todo:
+    - add metadata field based on YAML file
+    - replace deprecated xarray rasterio function by rioxarray
+
     '''
     print('---> compile geotiffs into daily netcdfs')
     # list filename
@@ -171,6 +203,10 @@ def tif_to_netcdf(project_dir='to/my/project/',
 
 
 if __name__ == '__main__':
+    import yaml
+    import argparse
+    import logging
+
     '''
     Organize project with the following folders:
         - myproject/
@@ -179,8 +215,43 @@ if __name__ == '__main__':
             - TIFs/
             - netcdfs/
     '''
-    project_dir = 'my_project/'
-    rotate_crop_filter_pcl(project_dir=project_dir)
-    las_to_tif(project_dir=project_dir)
-    tif_to_netcdf(project_dir=project_dir)
+
+
+    logging.info('Parse arguments')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--project_directory', '-dir', help='Path to project directory', default='./myproject/')
+    parser.add_argument('--awk_config', '-cf', help='Path to config file of little_awk project', default='config.yml')
+    args = parser.parse_args()
+
+    logfile = args.project_dir + 'awk_proj.log'
+    logging.basicConfig(level=logging.DEBUG,
+                        format="%(asctime)s %(levelname)s %(threadName)s %(name)s %(message)s",
+                        # datefmt='%m-%d %H:%M',
+                        filename=logfile,
+                        filemode='w')
+    console = logging.StreamHandler()
+    console.setLevel(logging.DEBUG)
+    logging.getLogger('').addHandler(console)
+    logging.info(args)
+
+    # Open config file into a dictionnary
+    with open(args.project_dir + args.awk_config, 'r') as file:
+        conf = yaml.safe_load(file)
+
+    rotate_crop_filter_pcl(project_dir=args.project_dir,
+                           z_range=conf['pcl_to_netcdf']['Z_range'],
+                           crop_extent=conf['pcl_to_netcdf']['XY_extent'],
+                           rotation=conf['pcl_to_netcdf']['rotation'],
+                           file_pattern='*.las'
+                           )
+
+    las_to_tif(project_dir=args.project_dir,
+               resolution= conf['pcl_to_netcdf']['resolution'],
+               bounds=conf['pcl_to_netcdf']['XY_extent'],
+               file_pattern='*.las')
+
+    tif_to_netcdf(project_dir=args.project_dir,
+                  file_pattern='*.tif',
+                  output_format='%Y%m%d.nc',)
+
 

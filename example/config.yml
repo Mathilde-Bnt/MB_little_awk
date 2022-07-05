@@ -1,0 +1,41 @@
+# Configuration file for running a Litlle Awk project
+
+# ------ Overall Project Metadata --------
+project:
+  name: Finse Lidar
+  description: Livox Horizon installed on top of 10m weather mast at Finse Research Station
+  site:
+    name: Finse
+    country: Norway
+    installation_date:
+    location:
+      epsg: 4236
+      latitude:
+      longitude:
+    instrument: Livox Horizon
+    owner: University of Oslo
+    contact: Simon Filhol, simon.filhol@geo.uio.no
+
+# ------ Parameters to convert las -------
+pcl_to_netcdf:
+  resolution: 0.1
+  XY_extent: '([-20,0],[-4.5,4.5])'
+  Z_range: [-6, 1]
+  rotation: '-0.34448594  0.93707407  0.05675957  2.51637959 -0.00583132  0.05832322 -0.9982807   0.35913649 -0.93877339 -0.34422466 -0.01462715  9.57211494 0. 0. 0. 1.'
+
+
+# ------ Parameters to detect snowpack layers --------
+snowpack:
+
+  # Median fitlering parameters in time and space
+  filtering:
+    time: 11    # timesteps
+    x: 11       # gridcells
+    y: 11       # gridcells
+
+  # dates for data to use definin summer surface
+  summer_surface:
+    start: 2021-07-15
+    end:
+
+

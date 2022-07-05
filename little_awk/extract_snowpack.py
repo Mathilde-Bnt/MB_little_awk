@@ -14,7 +14,7 @@ def define_summer_surface(ds, start, end):
         add summer surface to dataset
 
     '''
-    ds['summer_surf'] = ds['mean'].sel(time = slice(start,end)).mean(dim = 'time')
+    ds['summer_surf'] = ds['mean'].sel(time = slice(start,end)).mean(dim='time')
     # add here code to include metadata to variable
 
 def remove_outliers(ds, lower_thresh=0.1, upper_thresh=4):

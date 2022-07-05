@@ -46,7 +46,17 @@ setup(
     # What does your project relate to?
     keywords=['lidar', 'time-lapse'],
     packages=find_packages(),
-    install_requires=['matplotlib', 'xarray', 'datetime',  'pandas', 'numpy', 'gdal', 'pdal', 'scipy', 'geopandas', 'plyfile'],
+    install_requires=['matplotlib',
+                      'xarray',
+                      'datetime',
+                      'pandas',
+                      'numpy',
+                      'gdal',
+                      'pdal',
+                      'scipy',
+                      'geopandas',
+                      'plyfile',
+                      'pyyaml'],
     include_package_data=True
 
 )
