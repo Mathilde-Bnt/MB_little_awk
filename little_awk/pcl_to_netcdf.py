@@ -5,8 +5,11 @@ Modified by Gaspard and Lucas, March 2022
 Modified S. Filhol, June 2022
 
 TODO:
-- add function to convert .bin to .las
+- add functionality to delete .las and tif file once converted.
 - add metadata field in netcdf file
+- possibility to speed up this process parallelizing the file processing on multiple core with
+    'from multiprocessing.dummy import Pool as ThreadPool'
+
 
 """
 
@@ -15,37 +18,49 @@ import os
 import json
 import pandas as pd
 import pdal
-import tqdm
+from tqdm import tqdm
 import xarray as xr
 import openpylivox as opl
 
+def make_directory(project_dir='/home/data'):
+    os.mkdir(project_dir + os.sep + 'bin')
+    os.mkdir(project_dir + os.sep + 'las_raw')
+    os.mkdir(project_dir + os.sep + 'las_clean')
+    os.mkdir(project_dir + os.sep + 'TIFs')
+    os.mkdir(project_dir + os.sep + 'netcdfs')
 
-def convert_bin_to_las(path_to_data='/home/data/',
-                       file_pattern='*.bin'):
-    '''
-    Function to convert Livox .bin file to the open file format .las
+def convert_bin_to_las(project_dir='/home/data',
+                       bin_folder='bin',
+                       file_pattern='*.bin',
+                       las_folder='las_raw',
+                       output_path='./',
+                       deleteBin = False):
+    """
+    Function to convert a list of Livox binary files from .bin to .las
     Args:
-        path_to_data: path to data directory
-        file_pattern: glob style file pattern
+        bin_flist (str list): list of .bin filepath to convert
+        output_path (str): path where to export file
+        deleteBin (bool): delete bin file, True/False
+    """
+    file_list = glob.glob(project_dir + os.sep + bin_folder + os.sep + file_pattern)
+    file_list.sort()
+    if file_list.__len__() == 0:
+        print('WARNING: No file found')
+        return
 
-    Returns:
-
-    Todo:
-    - adapt function to little_awk
-    - test function
-    '''
-    file_list = glob.glob(path_to_data + '*.bin')
     for file in file_list:
-        opl.convertBin2LAS(file, deleteBin=False)
-        os.remove(file)
-        os.rename(file+'.las', file[:-4]+'.las')
-        print(file, ' removed and las renamed.')
+        opl.convertBin2LAS(file, deleteBin=deleteBin)
+        if os.path.isfile(file + '.las'):
+            os.rename(file + '.las', project_dir + os.sep + las_folder + os.sep + file.split('/')[-1][:-4] + '.las')
+    return
 
 
 def rotate_crop_filter_pcl(z_range=[-6, 1],
                            crop_extent='([-20, -1], [-5, 5])',
                            rotation='-0.34448594  0.93707407  0.05675957  2.51637959 -0.00583132  0.05832322 -0.9982807   0.35913649 -0.93877339 -0.34422466 -0.01462715  9.57211494 0. 0. 0. 1.',
-                           project_dir='to/my/proj/',
+                           project_dir='to/my/proj',
+                           las_raw_folder='las_raw',
+                           las_clean_folder='las_clean',
                            file_pattern='*.las'):
     '''
     Functino to rotate the point clouds, removes points with intensity below 20 and crops to the studied area
@@ -60,7 +75,7 @@ def rotate_crop_filter_pcl(z_range=[-6, 1],
         save processed file to folder las_clean/
     '''
     print('---> rotate, crop, and filter intensity of point cloud')
-    file_list = glob.glob(project_dir + 'laz_raw' + os.sep + file_pattern)
+    file_list = glob.glob(project_dir + os.sep + las_raw_folder + os.sep + file_pattern)
     file_list = [os.path.normpath(i) for i in file_list]
     file_list.sort()
 
@@ -88,7 +103,7 @@ def rotate_crop_filter_pcl(z_range=[-6, 1],
                         # write to new file
                         {
                             "type": "writers.las",
-                            "filename": project_dir + "las_clean" + os.sep + file.split('/')[-1]
+                            "filename": project_dir + os.sep + las_clean_folder + os.sep + file.split('/')[-1]
                         }
                     ]
             }
@@ -100,7 +115,7 @@ def rotate_crop_filter_pcl(z_range=[-6, 1],
 
 def las_to_tif(resolution= 0.1,
                bounds='([-20,0],[-4.5,4.5])',
-               project_dir='to/project/',
+               project_dir='to/project',
                file_pattern='*.las'):
     '''
     Function to extract geotiff from point clouds
@@ -115,7 +130,7 @@ def las_to_tif(resolution= 0.1,
         save geotif file in folder '/tifs'
     '''
     print('---> Converting las to tif')
-    file_list = glob.glob(project_dir + 'las_clean' + os.sep + file_pattern)
+    file_list = glob.glob(project_dir + os.sep + 'las_clean' + os.sep + file_pattern)
     file_list = [os.path.normpath(i) for i in file_list]
     file_list.sort()
 
@@ -136,7 +151,7 @@ def las_to_tif(resolution= 0.1,
                             "output_type": "all",
                             "resolution": str(resolution),
                             "bounds": bounds,
-                            "filename": project_dir + "TIFs" + os.sep +  file.split(os.sep)[-1][:-4] + ".tif"
+                            "filename": project_dir + os.sep + "TIFs" + os.sep + file.split(os.sep)[-1][:-4] + ".tif"
                          }
                     ]
             }
@@ -145,7 +160,7 @@ def las_to_tif(resolution= 0.1,
         pipeline.execute()
 
 
-def tif_to_netcdf(project_dir='to/my/project/',
+def tif_to_netcdf(project_dir='to/my/project',
               file_pattern='*.tif',
               output_format='%Y%m%d.nc',
               ):
@@ -166,7 +181,7 @@ def tif_to_netcdf(project_dir='to/my/project/',
     '''
     print('---> compile geotiffs into daily netcdfs')
     # list filename
-    file_list = glob.glob(project_dir + 'TIFs' + os.sep + file_pattern)
+    file_list = glob.glob(project_dir + os.sep + 'TIFs' + os.sep + file_pattern)
     file_list = [os.path.normpath(i) for i in file_list]
     file_list.sort()
 
@@ -192,7 +207,7 @@ def tif_to_netcdf(project_dir='to/my/project/',
         geotiffs_ds = geotiffs_ds.rename(var_name)
 
         # save to netcdf file
-        fname_nc = project_dir + 'netcdfs' + os.sep + meta.tst.loc[meta.tst.dt.strftime('%m-%d') == date].iloc[0].strftime(output_format)
+        fname_nc = project_dir + os.sep + 'netcdfs' + os.sep + meta.tst.loc[meta.tst.dt.strftime('%m-%d') == date].iloc[0].strftime(output_format)
 
         geotiffs_ds.to_netcdf(fname_nc, engine="h5netcdf")
         print('Remaining : ' + str(i) + 'File saved: ', fname_nc)
@@ -219,7 +234,7 @@ if __name__ == '__main__':
 
     logging.info('Parse arguments')
     parser = argparse.ArgumentParser()
-    parser.add_argument('--project_directory', '-dir', help='Path to project directory', default='./myproject/')
+    parser.add_argument('--project_directory', '-dir', help='Path to project directory', default='./myproject')
     parser.add_argument('--awk_config', '-cf', help='Path to config file of little_awk project', default='config.yml')
     args = parser.parse_args()
 

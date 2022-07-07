@@ -33,7 +33,7 @@ snowpack:
     x: 11       # gridcells
     y: 11       # gridcells
 
-  # dates for data to use definin summer surface
+  # dates for data to use defining summer surface
   summer_surface:
     start: 2021-07-15
     end:

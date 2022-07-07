@@ -9,7 +9,9 @@ conda activate awky
 conda install -c conda-forge libgdal
 conda install -c conda-forge gdal
 conda install -c conda-forge pdal python-pdal
-pip install xarray matplotlib pandas numpy scipy plyfile geopandas pyyaml
+pip install xarray matplotlib pandas numpy scipy plyfile geopandas pyyaml rasterio dask
+pip install laspy==1.7
+
 
 git clone https://github.com/ArcticSnow/OpenPyLivox
 pip install -e OpenPyLivox
