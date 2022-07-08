@@ -16,7 +16,7 @@ def define_summer_surface(ds, start, end):
         add summer surface to dataset
 
     '''
-    ds['summer_surf'] = ds['mean'].sel(time = slice(start,end)).mean(dim='time')
+    ds['summer_surface'] = ds['mean'].sel(time = slice(start,end)).mean(dim='time')
     # add here code to include metadata to variable
 
 def remove_outliers(ds, lower_thresh=0.1, upper_thresh=4):
@@ -47,7 +47,7 @@ def median_spacetime_filtering(ds, time_window=11, x_span=11, y_span=11):
     ds['snow_surface'] = ds['mean'].rolling(time=time_window, center=True).median()
     ds['snow_surface'] = ds['snow_surface'].rolling({'x': x_span, 'y': y_span}, center=True).median()
 
-def surface_to_depth(ds, fname):
+def to_depth_nc(ds, fname):
     '''
     Function to store summer reference and snow surfaces to an independent netcdf for further processing with dask.
     Args:
@@ -57,12 +57,15 @@ def surface_to_depth(ds, fname):
     Returns:
 
     '''
+
+    # Add logic to split into multiple netcdf file if too big. For instance use timestamp. One file per month or so.
     ds['snow_depth'] = ds.snow_surface - ds.summer_surface
-    ds[['snow_depth']].to_netcdf('test.nc', engine='h5netcdf',
+    ds[['snow_depth', 'summer_surface']].to_netcdf('test.nc', engine='h5netcdf',
                                           encoding={
-                                              'snow_depth': {'dtype': 'float32', 'zlib': True}
+                                              'snow_depth': {'dtype': 'float32', 'zlib': True},
+                                              'summer_surface': {'dtype': 'float32', 'zlib': True}
                                           })
-    print('Snow depth maps saved in file {}'.format(fname))
+    print('Snow depth maps saved to file {}'.format(fname))
 
 
 
