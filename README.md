@@ -20,6 +20,11 @@ pip install -e OpenPyLivox
 
 
 **TODO**:
+- [ ] Implement new snow detection algorithm
+- [ ] Figure out compaction/temperature model
+  - use existing model tool such as snowpack.f from snowmodel or a simplified version of Crocus
+- [ ] implement method to visualize dunes and sastrugi over the whole season.
+  - figure out what could be a good reference surface that would highlight the new dunes/sastrugi
 - [ ] bring all configuration into a config file in YAML
 - [ ] add compatibility code with config file
 - [ ] 
