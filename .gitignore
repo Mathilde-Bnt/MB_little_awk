@@ -3,3 +3,7 @@ example/test.nc
 little_awk.egg-info/
 example/data/
 little_awk/__pycache__/
+falls_detection_and_snow_model/*.nc
+falls_detection_and_snow_model/measured_vs_simul_snow_depth.png
+*/.ipynb_checkpoints/
+.ipynb_checkpoints/
