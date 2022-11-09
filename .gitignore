@@ -7,3 +7,5 @@ falls_detection_and_snow_model/*.nc
 falls_detection_and_snow_model/measured_vs_simul_snow_depth.png
 */.ipynb_checkpoints/
 .ipynb_checkpoints/
+*.png
+
