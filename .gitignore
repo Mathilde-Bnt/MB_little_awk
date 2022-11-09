@@ -9,3 +9,10 @@ falls_detection_and_snow_model/measured_vs_simul_snow_depth.png
 .ipynb_checkpoints/
 *.png
 
+/current_development/*.nc
+/current_development/*.png
+/current_development/*.f95
+/current_development/*.txt
+/current_development/*.inc
+/current_development/*.f
+/current_development/*.so
