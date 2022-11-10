@@ -16,3 +16,6 @@ falls_detection_and_snow_model/measured_vs_simul_snow_depth.png
 /current_development/*.inc
 /current_development/*.f
 /current_development/*.so
+/current_development/little_awk_functions.py
+
+/*/__pycache__/
