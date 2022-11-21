@@ -281,14 +281,14 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
         tsfc = float(met_temp_data[0])
     else:
         tsfc = tsfc_default
-    
+
     # Initialize indices of next accumulation/erosion events coming up (updated when their time is past)
     accumulation_index = 0
     erosion_index = 0
     temperature_index = 0
     
     for i in range(nb_iterations):
-        if temperature_index<len(met_temp_data) and i*dt>=met_time_data[temperature_index]:
+        if temperature_index<len(met_temp_data) and met_time_data[temperature_index]!=None and i*dt>=met_time_data[temperature_index]:
             if met_temp_data[temperature_index] != None:
                 tsfc = float(met_temp_data[temperature_index])
             temperature_index += 1
@@ -306,6 +306,7 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
                 melt_flag[jj] = 0
             else:
                 melt_flag[jj] = 1
+            # print('new_layer ', t_old, jj)           # TODO take this out
             jj += 1
             accumulation_index += 1
     
@@ -325,6 +326,7 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
         # Update layers' parameters
         ro_layer, dy_snow = ddensity.ddensity_ml(ro_layer, tf, dt, ro_water, ro_ice, t_old, jj, dy_snow, a1, a2)
         t_old = snowtemp.snowtemp_ml(gamma, t_old, tsfc, jj, dt, ro_layer, cp_snow, tf, dy_snow, melt_flag)
+        # print(t_old, jj)           # TODO take this out
     
         # Keep track of events
         ro_layer_evolution.append(ro_layer)
@@ -371,7 +373,7 @@ def plot_simul_and_signal(ds, x_sel, y_sel, depth_evolution, nb_layers_to_plot, 
         for i in range(len(depth_evolution)):
             layers[layer_index][i] = depth_evolution[i][layer_index] + layers[layer_index-1][i]
     
-    fig = plt.figure(figsize=(15, 7))
+    fig = plt.figure(figsize=my_figsize)
     times = pd.date_range(start=data_start_date,freq=str(dt)+'S',periods=nb_iterations)
     
     for layer_index in range(nb_layers_to_plot):
