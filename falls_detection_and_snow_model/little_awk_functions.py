@@ -230,7 +230,7 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
                                 start_accumulation, end_accumulation, start_erosion, end_erosion,
                                 jj, dt, ro_layer, ro_water, ro_ice, t_old, tf, tsfc_default, dy_snow, gamma, cp_snow, melt_flag, a1, a2,
                                 met_temp_data=[None], met_time_data=[0],
-                                new_snow_ro=150, new_snow_temp=-5, fit_top_of_snowfall_to_curve=False):
+                                new_snow_ro=150, fit_top_of_snowfall_to_curve=False):
     '''
     Function that simulates the evolution of the snowpack over a certain period of time
     Args:
@@ -264,7 +264,6 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
         met_time_data: array containing the meteorological timestamps (since start of simulation, in s), default [0]
         
         new_snow_ro: density of newly fallen snow in kg per m**3, default 150
-        new_snow_temp: temperature of newly fallen snow in degrees celcius, default -5
 
         fit_top_of_snowfall_to_curve: boolean, if True the height of snowfalls will be such that the snow depth is the same as the one measured by lidar, default False
     Returns:
@@ -300,7 +299,7 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
             else:
                 ddepth = get_change_in_snow_depth(ds, start_accumulation, end_accumulation, accumulation_index, x_sel, y_sel)
             ro_layer[jj] = new_snow_ro
-            t_old[jj] = new_snow_temp
+            t_old[jj] = tsfc
             dy_snow[jj] = ddepth
             if t_old[jj] <= 0:
                 melt_flag[jj] = 0
@@ -341,7 +340,7 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
 # ====================================================================================================
 
 def plot_simul_and_signal(ds, x_sel, y_sel, depth_evolution, nb_layers_to_plot, data_start_date, dt, nb_iterations,
-                          start_accumulation, end_accumulation, start_erosion, end_erosion,
+                          start_accumulation, end_accumulation, start_erosion, end_erosion, ice_layers_times_indices=None,
                           my_title='Comparison between lidar-measured and simulated snow depth', save_file=False, my_file_name='my_fig.png', my_figsize=(15, 7)):
     '''
     Function to plot the simulated snowpack and lidar signal on the same plot
@@ -359,6 +358,8 @@ def plot_simul_and_signal(ds, x_sel, y_sel, depth_evolution, nb_layers_to_plot, 
         end_accumulation: list of the indices of ending times of accumulations in ds
         start_erosion: list of the indices of starting times of erosions in ds
         end_erosion: list of the indices of ending times of erosions in ds
+
+        ice_layers_times_indices: list of time indices where an ice ayer was detected, default None
         
         my_title: title of the figure, default 'Comparison between lidar-measured and simulated snow depth'
         save_file: boolean, default False
@@ -378,6 +379,10 @@ def plot_simul_and_signal(ds, x_sel, y_sel, depth_evolution, nb_layers_to_plot, 
     
     for layer_index in range(nb_layers_to_plot):
         plt.plot(times, layers[layer_index], label='layer '+str(layer_index+1))
+
+    if ice_layers_times_indices != None:
+        for time_index in ice_layers_times_indices:
+            plt.plot(times[time_index], layers[-1][time_index]+0.001, c='y', marker='*', markersize=15, label='ice layer detected')
         
     ds.isel(x=x_sel, y=y_sel).snow_surface.plot(c='k', alpha=0.2)
 
@@ -392,5 +397,7 @@ def plot_simul_and_signal(ds, x_sel, y_sel, depth_evolution, nb_layers_to_plot, 
     if save_file:
         fig.savefig(my_file_name)
     
+    plt.show(block=False)
+
     return()
 
