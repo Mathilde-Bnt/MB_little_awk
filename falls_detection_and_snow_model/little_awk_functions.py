@@ -260,7 +260,7 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
         melt_flag: (1*max_nb_of_layers) array containing melt value (1 or 0) for each layer
         a1, a2: exponential parameters, empirically calibrated
 
-        met_temp_data: array containing surface temperatures for each meteorological timestamp (degrees Celcius), default [None], i.e. use tsfc=-15
+        met_temp_data: array containing surface temperatures for each meteorological timestamp (degrees Celcius), default [None], i.e. use tsfc=tsfc_default
         met_time_data: array containing the meteorological timestamps (since start of simulation, in s), default [0]
         
         new_snow_ro: density of newly fallen snow in kg per m**3, default 150
@@ -287,6 +287,7 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
     temperature_index = 0
     
     for i in range(nb_iterations):
+
         if temperature_index<len(met_temp_data) and met_time_data[temperature_index]!=None and i*dt>=met_time_data[temperature_index]:
             if met_temp_data[temperature_index] != None:
                 tsfc = float(met_temp_data[temperature_index])
@@ -299,7 +300,7 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
             else:
                 ddepth = get_change_in_snow_depth(ds, start_accumulation, end_accumulation, accumulation_index, x_sel, y_sel)
             ro_layer[jj] = new_snow_ro
-            t_old[jj] = tsfc
+            t_old[jj] = -2          # TODO does this make a difference?               # tsfc
             dy_snow[jj] = ddepth
             if t_old[jj] <= 0:
                 melt_flag[jj] = 0
