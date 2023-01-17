@@ -228,7 +228,7 @@ def get_met_forcing(simulation_start_date='2021-12-06 00:00:00', file_start_date
 
 def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulation_times, end_erosion_times,
                                 start_accumulation, end_accumulation, start_erosion, end_erosion,
-                                jj, dt, ro_layer, ro_water, ro_ice, t_old, tf, tsfc_default, dy_snow, gamma, cp_snow, melt_flag, a1, a2,
+                                jj, dt, ro_layer, ro_water, ro_ice, t_old, tf, tsfc_default, dy_snow, age_layers, gamma, cp_snow, melt_flag, a1, a2,
                                 met_temp_data=[None], met_time_data=[0],
                                 new_snow_ro=150, fit_top_of_snowfall_to_curve=False):
     '''
@@ -255,6 +255,7 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
         tf: ice fusion temperature (degrees Celcius)
         tsfc_default: surface temperature (degrees Celcius)
         dy_snow: (1*max_nb_of_layers) array containing depth value (m) for each layer
+        age_layers: (1*max_nb_of_layers) array containing age (s) of each layer
         gamma: (1*max_nb_of_layers) array containing zeros
         cp_snow: thermal capacity of snow
         melt_flag: (1*max_nb_of_layers) array containing melt value (1 or 0) for each layer
@@ -300,13 +301,13 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
             else:
                 ddepth = get_change_in_snow_depth(ds, start_accumulation, end_accumulation, accumulation_index, x_sel, y_sel)
             ro_layer[jj] = new_snow_ro
-            t_old[jj] = -2          # TODO does this make a difference?               # tsfc
+            t_old[jj] = tsfc
             dy_snow[jj] = ddepth
+            age_layers[jj] = (nb_iterations-i) * dt           # age in seconds at end of simulation
             if t_old[jj] <= 0:
                 melt_flag[jj] = 0
             else:
                 melt_flag[jj] = 1
-            # print('new_layer ', t_old, jj)           # TODO take this out
             jj += 1
             accumulation_index += 1
     
@@ -321,12 +322,12 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
                     dy_snow[jj] = 0
                     ro_layer[jj] = 0
                     t_old[jj] = 0
+                    age_layers[jj] = 0
                     melt_flag[jj] = 0
     
         # Update layers' parameters
         ro_layer, dy_snow = ddensity.ddensity_ml(ro_layer, tf, dt, ro_water, ro_ice, t_old, jj, dy_snow, a1, a2)
         t_old = snowtemp.snowtemp_ml(gamma, t_old, tsfc, jj, dt, ro_layer, cp_snow, tf, dy_snow, melt_flag)
-        # print(t_old, jj)           # TODO take this out
     
         # Keep track of events
         ro_layer_evolution.append(ro_layer)
