@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import xarray as xr
 import csv
+import math
+from scipy.stats import sem
 
 
 # ===========================================================================================
@@ -403,3 +405,54 @@ def plot_simul_and_signal(ds, x_sel, y_sel, depth_evolution, nb_layers_to_plot, 
 
     return()
 
+
+# ====================================================================================================
+# =========================== Measuring closeness of simulations =====================================
+# ====================================================================================================
+
+def rmse_measure(simul_total_height_array, lidar_height_array):
+    '''
+    Function that computes the root mean square error between two arrays
+    Args:
+        simul_total_height_array: array containing the total height of the simulated snowpack at each timestamp
+        lidar_height_array: array containing the height of the snowpack measured by the lidar at each timestamp
+    Returns:
+        rmse: root mean square error between the two arrays
+    '''
+    mse = np.square(np.subtract(simul_total_height_array, lidar_height_array)).mean()
+    rmse = math.sqrt(mse)
+    
+    return(rmse)
+
+def stderr_measure(simul_total_height_array, lidar_height_array):
+    '''
+    Function that computes the standard error of the difference of two arrays (measures to what extent the two series are "parallel", the smaller the better)
+    Args:
+        simul_total_height_array: array containing the total height of the simulated snowpack at each timestamp
+        lidar_height_array: array containing the height of the snowpack measured by the lidar at each timestamp
+    Returns:
+        stderr: standard error of the difference of the two arrays
+    '''
+    difference = simul_total_height_array - lidar_height_array
+    stderr = sem(difference)
+    
+    return(stderr)
+
+def p_correl_measure(simul_total_height_array, lidar_height_array):
+    '''
+    Function that computes the Pearson correlation between two arrays
+    Args:
+        simul_total_height_array: array containing the total height of the simulated snowpack at each timestamp
+        lidar_height_array: array containing the height of the snowpack measured by the lidar at each timestamp
+    Returns:
+        p_correl: Pearson correlation between the two arrays
+    '''
+    dataframe = {
+        "Array_1": simul_total_height_array,
+        "Array_2": lidar_height_array
+    }
+
+    data = pd.DataFrame(dataframe)
+    p_correl = data.corr().iloc[0, 1]
+    
+    return(p_correl)
