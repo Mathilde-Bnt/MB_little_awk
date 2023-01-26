@@ -20,9 +20,10 @@ a2 = 0.021
 max_nb_of_layers = 25
 
 # Choose options for simulation
-use_true_met = False   # set to True if want to use the correct temperature forcing
-
+use_true_met = False
 simul_fit_top_of_snowfall_to_curve = False
+simul_erode_several_layers = False
+simul_detect_ice = False
 
 # 'Fixed' parameters
 tf = 0
