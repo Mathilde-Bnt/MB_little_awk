@@ -205,7 +205,7 @@ def get_met_forcing(simulation_start_date='2021-12-06 00:00:00', file_start_date
         met_time_data: list containing the meteorological timestamps (s since start of simulation)
         met_wind_data: list containing wind speed for each meteorological timestamp (m.s^-1)
     '''
-    print('Warning: check the format of your file corresponds to the indices given in the functions (wind speed 5, surface temperature 8, time 0.')
+    print('In get_met_forcing() - Warning: check the format of your file corresponds to the indices given in the functions (wind speed 5, surface temperature 8, time 0).')
 
     # Initialize lists
     time_series = []
@@ -333,7 +333,7 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
         dy_snow: (1*max_nb_of_layers) array containing depth value (m) for each layer
         age_layers: (1*max_nb_of_layers) array containing age (s) of each layer
         gamma: (1*max_nb_of_layers) array containing zeros
-        cp_snow: thermal capacity of snow (J.kg^-1.K)
+        cp_snow: thermal capacity of snow (J.kg^-1.K^-1)
         melt_flag: (1*max_nb_of_layers) array containing melt value (1 or 0) for each layer
         a1, a2: exponential parameters, empirically calibrated, a1 in m^-1.s^-1, a2 in m^3.kg^-1
 
@@ -615,6 +615,7 @@ def rmse_measure(simul_total_height_array, lidar_height_array):
     
     return(rmse)
 
+
 def stderr_measure(simul_total_height_array, lidar_height_array):
     '''
     Function that computes the standard error of the difference of two arrays (measures to what extent the two series
@@ -629,6 +630,7 @@ def stderr_measure(simul_total_height_array, lidar_height_array):
     stderr = sem(difference)
     
     return(stderr)
+
 
 def p_correl_measure(simul_total_height_array, lidar_height_array):
     '''
@@ -648,3 +650,20 @@ def p_correl_measure(simul_total_height_array, lidar_height_array):
     p_correl = data.corr().iloc[0, 1]
     
     return(p_correl)
+
+
+def all_measures(a1, a2, simul_total_height_array, lidar_height_array):
+    '''
+    Function that computes the rmse, standard error of the difference and Pearson correlation between two arrays
+    Args:
+        a1: a1 value used to obtain simul_total_height_array
+        a2: a2 value used to obtain simul_total_height_array
+        simul_total_height_array: array containing the total height of the simulated snowpack at each timestamp
+        lidar_height_array: array containing the height of the snowpack measured by the lidar at each timestamp
+    Returns:
+        a1, a2: unchanged values, used for identification of the results
+        all_measrs: tuple containing the computed values in the order (rmse, stde, p_corr)
+    '''
+    all_measrs = rmse_measure(simul_total_height_array, lidar_height_array), stderr_measure(simul_total_height_array, lidar_height_array), p_correl_measure(simul_total_height_array, lidar_height_array)
+    
+    return(a1, a2, all_measrs)

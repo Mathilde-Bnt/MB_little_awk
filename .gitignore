@@ -22,3 +22,6 @@ falls_detection_and_snow_model/measured_vs_simul_snow_depth.png
 /*/__pycache__/
 
 /current_development/Sensitivity_tests_figs/
+
+/finalized/*.nc
+/finalized/*.pckl
