@@ -107,6 +107,24 @@ def median_time_filtering(ds, min_periods_val, time_window=11):
     return()
 
 
+def make_summer_netcdf(ds, directory_to_save_file_in, x_span=9, y_span=9, time_span=43):
+    '''
+    Function that cleans a dataset containing the summer lidar data and stores the median ground height in a netcdf file
+    Args:
+        ds: dataset containing the summer scans' data in a 'mean' variable
+        directory_to_save_file_in: path to the directory in which the output netcdf file should be saved
+        x_span: x-span on which to apply median filtering, unit [index], default 9
+        y_span: y-span on which to apply fmedian iltering, unit [index], default 9
+        time_span: time-span on which to apply median filtering, unit [index], default 43
+    Returns:
+    '''
+    ds.ffill(dim='time')
+    ds['snow_surface'] = ds['mean'].rolling({'x': x_span, 'y': y_span}, center=True).median()
+    ds['snow_surface'] = ds['snow_surface'].rolling(time=time_span, center=True).median()
+    ds.snow_surface.isel(time=int(len(ds.time.values)/2)).to_netcdf(directory_to_save_file_in + 'summer_surface.nc')
+    return()
+
+
 # ==========================================================================================
 # =========================== Detecting snow events ========================================
 # ==========================================================================================
