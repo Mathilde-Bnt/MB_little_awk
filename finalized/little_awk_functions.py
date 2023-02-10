@@ -107,21 +107,22 @@ def median_time_filtering(ds, min_periods_val, time_window=11):
     return()
 
 
-def make_summer_netcdf(ds, directory_to_save_file_in, x_span=9, y_span=9, time_span=43):
+def define_summer_surface(ds, start, end):
     '''
-    Function that cleans a dataset containing the summer lidar data and stores the median ground height in a netcdf file
+    Function to define summer surface by taking the median along time axis a series of summer scans
     Args:
-        ds: dataset containing the summer scans' data in a 'mean' variable
-        directory_to_save_file_in: path to the directory in which the output netcdf file should be saved
-        x_span: x-span on which to apply median filtering, unit [index], default 9
-        y_span: y-span on which to apply fmedian iltering, unit [index], default 9
-        time_span: time-span on which to apply median filtering, unit [index], default 43
+        ds: dataset to use
+        start: start date
+        end: end date
+
     Returns:
+        add summer surface to dataset
+
     '''
-    ds.ffill(dim='time')
-    ds['snow_surface'] = ds['mean'].rolling({'x': x_span, 'y': y_span}, center=True).median()
-    ds['snow_surface'] = ds['snow_surface'].rolling(time=time_span, center=True).median()
-    ds.snow_surface.isel(time=int(len(ds.time.values)/2)).to_netcdf(directory_to_save_file_in + 'summer_surface.nc')
+    ds['summer_surface'] = ds['snow_surface'].sel(time = slice(start, end)).median(dim='time')
+    ds.summer_surface.attrs = {'units':'m', 'standard_name':'summer_surface',
+                               'long_name':'Summer surface'}
+    print(f'---> Summer surface defined based on scans from {start} to {end}')
     return()
 
 

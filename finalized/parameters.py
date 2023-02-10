@@ -6,15 +6,9 @@ import little_awk_functions
 x_sel=10
 y_sel=10
 
-# Summer surface dataset
-
-# If needed, create new dataset        # TODO make this check automatic to avoid issues if files exist already or not
-# summer_data_raw = xr.open_mfdataset('/home/mabonnet/Desktop/data/2021_2022_livox_surfaces/202107*.nc')
-# little_awk_functions.fill_in_missing_variables(summer_data_raw, 'surface')
-# little_awk_functions.make_summer_netcdf(summer_data_raw, '/home/mabonnet/github/MB_little_awk/')
-
-# Load dataset
-summer_data = xr.open_dataset('/home/mabonnet/github/MB_little_awk/current_development/summer_surface.nc')
+# Definition of the summer surface
+start_summer_surface = '2021-12-06'
+end_summer_surface =  '2021-12-07'
 
 # Snow events detection parameters
 time_window_std = 25
