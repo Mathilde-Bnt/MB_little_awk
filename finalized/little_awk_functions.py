@@ -133,7 +133,7 @@ def define_summer_surface(ds, start, end):
 def get_snow_events(ds, x_sel, y_sel, time_window_std, std_threshold):
     '''
     Function that computes the dates of start and end times of snow events (snow accumulation and erosion)
-    The events are defined as periods during which the snow-depth rolling standard deviation is higher than 
+    The events are defined as periods during which the snow depth rolling standard deviation is higher than 
     a given threshold
     We distinguish between accumulation and erosion of snow by looking at the snow depth before and after the event
     Args:
@@ -185,14 +185,14 @@ def get_change_in_snow_depth(ds, start_events, end_events, index_of_event, x_sel
     '''
     Function to compute snow height difference (absolute value) before and after an event
     Args:
-        ds: dataset containing the snow-depth data ('snow_surface' variable)
+        ds: dataset containing the snow depth data ('snow_surface' variable)
         start_events: list of time indices at which the events of interest (accumulation or erosion) started
         end_events: list of time indices at which the events of interest (accumulation or erosion) ended
         index_of_event: index of the event of interest in the lists of time indices
         x_sel: index of the x-coordinate of the point of interest
         y_sel: index of the y-coordinate of the point of interest
     Returns:
-        difference in snow-depth between the start and end of the event
+        difference in snow depth between the start and end of the event
     '''
     # Get timing of event
     start_date = start_events[index_of_event]
@@ -224,7 +224,7 @@ def get_met_forcing(simulation_start_date='2021-12-06 00:00:00', file_start_date
         met_time_data: list containing the meteorological timestamps (s since start of simulation)
         met_wind_data: list containing wind speed for each meteorological timestamp (m.s^-1)
     '''
-    print('In get_met_forcing() - Warning: check the format of your file corresponds to the indices given in the functions (wind speed 5, surface temperature 8, time 0).')
+    print('In get_met_forcing() - Warning: check the format of your file corresponds to the indices given in the functions (wind speed 5, surface temperature 7, time 0).')
 
     # Initialize lists
     time_series = []
@@ -233,7 +233,7 @@ def get_met_forcing(simulation_start_date='2021-12-06 00:00:00', file_start_date
     wind_speed_series = []
 
     with open(file_name) as met_data:
-        reader = csv.reader(met_data)
+        reader = csv.reader(met_data)      # TODO use pd.read... instead > make sure c'est quand-meme sous forme de liste !
         next(reader)
         start_date_in_sec = pd.to_datetime(simulation_start_date).timestamp()
 
@@ -248,8 +248,8 @@ def get_met_forcing(simulation_start_date='2021-12-06 00:00:00', file_start_date
                 air_temp_series.append(None)
 
             # Save surface temperature data
-            if row[8]!='':
-                surf_temp_series.append(float(row[8]))
+            if row[7]!='':
+                surf_temp_series.append(float(row[7]))
             else:
                 surf_temp_series.append(None)
 
@@ -349,7 +349,7 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
         t_old: (1*max_nb_of_layers) array containing temperature value (degrees Celcius) for each layer
         tf: ice fusion temperature (degrees Celcius)
         tsfc_default: surface temperature (degrees Celcius)
-        dy_snow: (1*max_nb_of_layers) array containing depth value (m) for each layer
+        dy_snow: (1*max_nb_of_layers) array containing thickness value (m) for each layer
         age_layers: (1*max_nb_of_layers) array containing age (s) of each layer
         gamma: (1*max_nb_of_layers) array containing zeros
         cp_snow: thermal capacity of snow (J.kg^-1.K^-1)
@@ -371,7 +371,7 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
                 useful for the ice detection option, default None
         start_erosion_times:  list of starting times of erosions in seconds since data starting date,
                 useful for the ice detection option, default None
-        a1_vector: array containing the a1 values (m^-1.s^-1) for each layers (null for ice layers that do not compact),
+        a1_vector: array containing the a1 values (m^-1.s^-1) for each layer (null for ice layers that do not compact),
                 useful for the ice detection option, default None
         slope_threshold: value below which the slope of a compaction period is considered negligeable (m.s^-1),
                 useful for the ice detection option, default None
@@ -381,8 +381,8 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
     Returns:
         ro_layer_evolution: list of the states of layers' density (kg.m^-3) through time,
                 format [[ro_layer_1, ro_layer_2, ro_layer_3, ...]_time_1, [...]_time_2, [...], ...]
-        depth_evolution: list of the states of layers' depth (m) through time,
-                format [[depth_layer_1, depth_layer_2, depth_layer_3, ...]_time_1, [...]_time_2, [...], ...]
+        thickness_evolution: list of the states of layers' thickness (m) through time,
+                format [[thickness_layer_1, thickness_layer_2, thickness_layer_3, ...]_time_1, [...]_time_2, [...], ...]
         temperature_evolution: list of the states of layers' temperature (degrees Celcius) through time,
                 format [[temp_layer_1, temp_layer_2, temp_layer_3, ...]_time_1, [...]_time_2, [...], ...]
         ice_layers_times: list of the simulation times' indices at which ice was detected
@@ -395,7 +395,7 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
         ice_layers_times = []
 
     # Initialize arrays to keep track of variables in time
-    ro_layer_evolution, depth_evolution, temperature_evolution = [], [], []
+    ro_layer_evolution, thickness_evolution, temperature_evolution = [], [], []
 
     # Initialize surface temperature
     if met_temp_data[0] != None:
@@ -530,31 +530,31 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
     
         # Keep track of events
         ro_layer_evolution.append(ro_layer)
-        depth_evolution.append(dy_snow)
+        thickness_evolution.append(dy_snow)
         temperature_evolution.append(t_old)
         
         if not detect_ice:
             ice_layers_times = None
         
-    return(ro_layer_evolution, depth_evolution, temperature_evolution, ice_layers_times)
+    return(ro_layer_evolution, thickness_evolution, temperature_evolution, ice_layers_times)
 
 
 # ====================================================================================================
 # =========================== Plotting the snowpack evolution ========================================
 # ====================================================================================================
 
-def plot_simul_and_signal(ds, x_sel, y_sel, depth_evolution, nb_layers_to_plot, data_start_date, dt, nb_iterations,
+def plot_simul_and_signal(ds, x_sel, y_sel, thickness_evolution, nb_layers_to_plot, data_start_date, dt, nb_iterations,
                           start_accumulation, end_accumulation, start_erosion, end_erosion, ice_layers_times=None,
                           my_title='Comparison between lidar-measured and simulated snow depth', save_file=False,
-                          my_file_name='my_fig.png', my_figsize=(16, 7)):
+                          my_file_name='my_fig.png', my_figsize=(16, 7), show_layers_in_legend=False):
     '''
     Function to plot the simulated snowpack layers and lidar signal on the same plot
     Args:
         ds: clean dataset
         x_sel: x-coordinate of the point of interest
         y_sel: y-coordinate of the point of interest
-        depth_evolution: list of the states of layers' depth (m) through time, 
-                format [[depth_layer_1, depth_layer_2, depth_layer_3, ...]_time_1, [...]_time_2, [...], ...]
+        thickness_evolution: list of the states of layers' thickness (m) through time, 
+                format [[thickness_layer_1, thickness_layer_2, thickness_layer_3, ...]_time_1, [...]_time_2, [...], ...]
         nb_layers_to_plot: number of layers to plot, starting from the bottom
         data_start_date: first date of the dataset, pandas datetime format
         dt: timestep used in snowpack simulation (s)
@@ -571,17 +571,18 @@ def plot_simul_and_signal(ds, x_sel, y_sel, depth_evolution, nb_layers_to_plot, 
         save_file: boolean, default False
         my_file_name: name to be given to the saved file, default 'my_fig.png'
         my_figsize: figure size, default (16, 7)
+        show_layers_in_legend: boolean, is True if all layer numbers should appear in the legend (more text)
     Returns:
     '''
     # Construct the data to plot: height of each layer as a function of time
-    layers = np.zeros((nb_layers_to_plot, len(depth_evolution)))
+    layers = np.zeros((nb_layers_to_plot, len(thickness_evolution)))
     # First layer
-    for i in range(len(depth_evolution)):
-        layers[0][i] = depth_evolution[i][0]
+    for i in range(len(thickness_evolution)):
+        layers[0][i] = thickness_evolution[i][0]         # TODO make into np.array form instead and then plot
     # Next layers
     for layer_index in range(1, nb_layers_to_plot):
-        for i in range(len(depth_evolution)):
-            layers[layer_index][i] = depth_evolution[i][layer_index] + layers[layer_index-1][i]
+        for i in range(len(thickness_evolution)):
+            layers[layer_index][i] = thickness_evolution[i][layer_index] + layers[layer_index-1][i]
     
     # Define figure and timestamps
     fig = plt.figure(figsize=my_figsize)
@@ -589,7 +590,10 @@ def plot_simul_and_signal(ds, x_sel, y_sel, depth_evolution, nb_layers_to_plot, 
     
     # Plot each layer
     for layer_index in range(nb_layers_to_plot):
-        plt.plot(times, layers[layer_index], label='layer '+str(layer_index+1))
+        if show_layers_in_legend:
+            plt.plot(times, layers[layer_index], label='layer '+str(layer_index+1))
+        else:
+            plt.plot(times, layers[layer_index])
 
     # Plot a star at each ice layer detection
     if ice_layers_times != None:
@@ -695,90 +699,113 @@ def all_measures(a1, a2, simul_total_height_array, lidar_height_array):
 # =========================== Computing physical profiles of simulations =============================
 # ====================================================================================================
 
-def get_data_from_ref(index_of_ref_layer, ro_layer_array, depth_array):
+def get_data_from_ref(index_of_ref_layer, ro_layer_array, thickness_array):
     '''
     Function that computes some characteristic values (SWE, height, average density) above a "ref" interface
     Args:
         index_of_ref_layer: index of the layer that is directly underneath the ref interface
-        ro_layer_array: array of the densities of each layers at the end of the simulation
-        depth_array: array of the heights of each layers at the end of the simulation
+        ro_layer_array: array of the densities of each layer at the end of the simulation
+        thickness_array: array of the thickness of each layer at the end of the simulation
     Returns:
-        swe_from_ref: value of the SWE above the given interface
-        height_from_ref: height of the snowpack above the given interface
-        ave_density_from_ref: averaged density of the snow above the given interface
+        swe_from_ref: value of the SWE above the given interface, in m
+        height_from_ref: height of the snowpack above the given interface, in m
+        ave_density_from_ref: averaged density of the snow above the given interface, in kg.m^-3
     '''
-    swe_from_ref = np.dot(np.array(ro_layer_array[index_of_ref_layer+1:]), np.array(depth_array[index_of_ref_layer+1:])) / 1000
-    height_from_ref = sum(depth_array[i] for i in range(index_of_ref_layer+1, len(depth_array)))
-    ave_density_from_ref = np.dot(np.array(ro_layer_array[index_of_ref_layer+1:]), np.array(depth_array[index_of_ref_layer+1:])) / height_from_ref
+    swe_from_ref = np.dot(np.array(ro_layer_array[index_of_ref_layer+1:]), np.array(thickness_array[index_of_ref_layer+1:])) / 1000
+    height_from_ref = sum(thickness_array[i] for i in range(index_of_ref_layer+1, len(thickness_array)))
+    ave_density_from_ref = np.dot(np.array(ro_layer_array[index_of_ref_layer+1:]), np.array(thickness_array[index_of_ref_layer+1:])) / height_from_ref
     
     return(swe_from_ref, height_from_ref, ave_density_from_ref)
 
 
-def get_depth_layers_indices(bottom_depth, sampling_length, depth_array):
+def get_depth_layers_indices(bottom_depth, sampling_length, thickness_array, start_from_top=False):
     '''
-    Function that creates an array of the layer index at each (regularly) sampled depth (useful for computing profiles)
+    Function that creates an array of the layer index at each (regularly) sampled depth (useful for computing profiles),
+    starting from the top or bottom of the snowpack
     Args:
-        bottom_depth: depth of the lowest sample, in meters, counted positively from the surface of the snowpack downwards (included)
+        bottom_depth: depth of the lowest sample, in meters, counted positively from the surface of the snowpack downwards (included) if start_from_top=True,
+                      counted positively from the ground upwards if start_from_top=False
         sampling_length: height between two consecutive sampled depths
-        depth_array: array of the heights of each layers, in meters, at the end of the simulation
+        thickness_array: array of the thickness of each layer, in meters, at the end of the simulation
+        start_from_top: boolean, is True if the sampling starts at the top of the snowpack (included) downwards, and False if it starts
+                        at bottom_depth (included) upwards. Default False
     Returns:
         layers_array: array containing the indices of the layers corresponding to each sampled depth (which layer was sampled)
     '''
-    current_layer_index = next(len(depth_array) - i for i, j in enumerate(reversed(depth_array), 1) if j != 0)  # index of top layer
-    remaining_depth_in_current_layer = depth_array[current_layer_index]
-    current_depth = 0
-    layers_array = [current_layer_index]    # top of the snowpack
-    leftover_depth = sampling_length
+    if start_from_top:
+        current_layer_index = next(len(thickness_array) - i for i, j in enumerate(reversed(thickness_array), 1) if j != 0)  # index of top layer
+        remaining_depth_in_current_layer = thickness_array[current_layer_index]
+        current_depth = 0      # from the top of the snowpack
+        layers_array = [current_layer_index]    # top of the snowpack
+        leftover_depth = sampling_length    # depth to go to the next sample
     
-    while current_depth < bottom_depth and current_layer_index > -1:
-        while remaining_depth_in_current_layer >= sampling_length and current_depth < bottom_depth:   # next sample is in current layer
-            layers_array.append(current_layer_index)
-            remaining_depth_in_current_layer -= sampling_length
-            current_depth += sampling_length
-        while remaining_depth_in_current_layer < leftover_depth and current_depth < bottom_depth and current_layer_index > -1:   # next sample is not in current layer
-            current_layer_index -= 1   # go to next layer
-            leftover_depth -= remaining_depth_in_current_layer   # what is left to "subtract" to this new layer
-            remaining_depth_in_current_layer = depth_array[current_layer_index]
-            if remaining_depth_in_current_layer >= leftover_depth:   # next sample is in current layer
+        while current_depth < bottom_depth and current_layer_index > -1:
+            while remaining_depth_in_current_layer >= leftover_depth and current_depth < bottom_depth and current_layer_index > -1:   # next sample is in current layer
                 layers_array.append(current_layer_index)
                 remaining_depth_in_current_layer -= leftover_depth
                 current_depth += sampling_length
                 leftover_depth = sampling_length
+            while remaining_depth_in_current_layer < leftover_depth and current_depth < bottom_depth and current_layer_index > -1:   # next sample is not in current layer
+                current_layer_index -= 1   # go to next layer
+                leftover_depth -= remaining_depth_in_current_layer   # what is left to "subtract" to this new layer
+                remaining_depth_in_current_layer = thickness_array[current_layer_index]
                 
-    layers_array = list(reversed(layers_array))
+        layers_array = list(reversed(layers_array))
+        
+    else: # sampling starts from bottom_depth included
+        current_layer_index = 0    # index of bottom layer
+        remaining_depth_in_current_layer = thickness_array[current_layer_index]
+        layers_array = []
+        leftover_depth = bottom_depth    # depth to go to the next sample
+        
+        # Get all other indices
+        while current_layer_index < len(thickness_array):
+            while remaining_depth_in_current_layer >= leftover_depth and current_layer_index < len(thickness_array):   # next sample is in current layer
+                layers_array.append(current_layer_index)
+                remaining_depth_in_current_layer -= leftover_depth
+                leftover_depth = sampling_length
+            while remaining_depth_in_current_layer < leftover_depth and current_layer_index < len(thickness_array):   # next sample is not in current layer
+                current_layer_index += 1   # go to next layer
+                leftover_depth -= remaining_depth_in_current_layer   # what is left to "subtract" to this new layer
+                if current_layer_index < len(thickness_array):
+                    remaining_depth_in_current_layer = thickness_array[current_layer_index]
     
     return(layers_array)
 
 
-def density_profile(bottom_depth, sampling_length, depth_array, ro_array):
+def density_profile(bottom_depth, sampling_length, thickness_array, ro_array, start_from_top=False):
     '''
     Function that creates an array of the layer density at each (regularly) sampled depth
     Args:
         bottom_depth: depth of the lowest sample, in meters, counted positively from the surface of the snowpack downwards (included)
         sampling_length: height between two consecutive sampled depths
-        depth_array: array of the heights of each layers, in meters, at the end of the simulation
-        ro_array: array of the densities of each layers, in kg.m^-3, at the end of the simulation
+        thickness_array: array of the thickness of each layer, in meters, at the end of the simulation
+        ro_array: array of the densities of each layer, in kg.m^-3, at the end of the simulation
+        start_from_top: boolean, is True if the sampling starts at the top of the snowpack (included) downwards, and False if it starts
+                        at bottom_depth (included) upwards. Default False
     Returns:
         ro_profile: array containing the simulated densities at each sampled depth
     '''
-    indices_array = get_depth_layers_indices(bottom_depth, sampling_length, depth_array)
+    indices_array = get_depth_layers_indices(bottom_depth, sampling_length, thickness_array, start_from_top)
     ro_profile = [ro_array[i] for i in indices_array]
     
     return(ro_profile)
 
 
-def temp_profile(bottom_depth, sampling_length, depth_array, temp_array):
+def temp_profile(bottom_depth, sampling_length, thickness_array, temp_array, start_from_top=False):
     '''
     Function that creates an array of the layer temperature at each (regularly) sampled depth
     Args:
         bottom_depth: depth of the lowest sample, in meters, counted positively from the surface of the snowpack downwards (included)
         sampling_length: height between two consecutive sampled depths
-        depth_array: array of the heights of each layers, in meters, at the end of the simulation
-        temp_array: array of the temperatures of each layers at the end of the simulation
+        thickness_array: array of the thickness of each layer, in meters, at the end of the simulation
+        temp_array: array of the temperatures of each layer at the end of the simulation
+        start_from_top: boolean, is True if the sampling starts at the top of the snowpack (included) downwards, and False if it starts
+                        at bottom_depth (included) upwards. Default False
     Returns:
         temp_profile: array containing the simulated temperatures at each sampled depth
     '''
-    indices_array = get_depth_layers_indices(bottom_depth, sampling_length, depth_array)
+    indices_array = get_depth_layers_indices(bottom_depth, sampling_length, thickness_array, start_from_top)
     temp_profile = [temp_array[i] for i in indices_array]
     
     return(temp_profile)

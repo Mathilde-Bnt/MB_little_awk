@@ -1,5 +1,5 @@
 subroutine snowtemp_ml(gamma, T_old, Tsfc, JJ, dt, ro_layer, Cp_snow, Tf, dy_snow, melt_flag, T_new, nz_max)
-
+    
     integer :: j
     integer, intent(in) :: JJ, nz_max, melt_flag(nz_max)
     real, intent(in)    :: ro_layer(nz_max), dy_snow(nz_max), T_old(nz_max), Tsfc, Cp_snow, Tf, dt
@@ -77,7 +77,7 @@ end
 ! ==============================================================
 
 subroutine getgamma(JJ, ro_layer, gamma, nz_max)
-
+    
     integer :: j
     integer, intent(in) :: JJ, nz_max
     real, intent(in)    :: ro_layer(nz_max)
@@ -99,7 +99,7 @@ end
 ! ==============================================================
 
 subroutine getcv(JJ, dy_p, dy_snow, nz_max)
-
+    
     integer :: j
     integer, intent(in) :: JJ, nz_max
     real, intent(in)    :: dy_snow(nz_max)
@@ -117,7 +117,7 @@ end
 ! ==============================================================
 
 subroutine cv_info(dely_p, f_n, y_crds, y_wall, dy_p, JJ, nz_max)
-
+    
     integer :: j
     integer, intent(in) :: JJ, nz_max
     real, intent(in)  :: dy_p(nz_max)
@@ -167,7 +167,7 @@ end
 ! ==============================================================
 
 subroutine gamma1(g_b_ns, gamma, f_n, JJ, nz_max)
-
+    
     integer :: j
     integer, intent(in) :: JJ, nz_max
     real, intent(in)    :: gamma(nz_max), f_n(nz_max+1)
@@ -196,7 +196,7 @@ end
 ! ==============================================================
 
 subroutine ge_coef(aN, aS, aP0, dy_p, dely_p, g_b_ns, dt, JJ, ro_layer, Cp_snow, nz_max)
-
+    
     integer :: j
     integer, intent(in) :: JJ, nz_max
     real, intent(in)    :: dy_p(nz_max), dely_p(nz_max+1), g_b_ns(nz_max+1), ro_layer(nz_max), dt, Cp_snow
@@ -219,7 +219,7 @@ end
 ! ==============================================================
 
 subroutine prepsolve(A_sub, A_super, A_main, b_vector, T_old, dy_p, bc_S, bc_N, Sc, Sp, aN, aS, aP0, JJ, nz_max)
-
+    
     integer :: j
     integer, intent(in) :: JJ, nz_max
     real, intent(in)    :: aN(nz_max), aS(nz_max), Sp(nz_max), Sc(nz_max), aP0(nz_max), dy_p(nz_max), T_old(nz_max), bc_S, bc_N
@@ -253,7 +253,7 @@ end
 ! ==============================================================
 
 subroutine trisolve(T_new, asub, amain, asuper, b, JJ, nz_max)
-
+    
     integer :: j
     integer, intent(in) :: JJ, nz_max
     real, intent(in)    :: asub(nz_max), asuper(nz_max), amain(nz_max), b(nz_max)

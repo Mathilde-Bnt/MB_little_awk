@@ -3,24 +3,24 @@ import xarray as xr
 import little_awk_functions
 
 # Coordinates of the point of interest
-x_sel=10
-y_sel=10
+x_sel = 10
+y_sel = 10
 
 # Definition of the summer surface
-start_summer_surface = '2021-12-06'
-end_summer_surface =  '2021-12-07'
+start_summer_surface = '2022-10-07'
+end_summer_surface =  '2022-10-15'
 
 # Snow events detection parameters
 time_window_std = 25
-std_threshold = 0.015
+std_threshold = 0.022
 
 # Initial state for compaction/temperature model, with 0 layers
 
 # Adaptable parameters
 tsfc = -5           # degrees Celcius
 dt = 100            # s
-a1 = 0.0013         # m^-1.s^-1
-a2 = 0.021          # m^3.kg^-1
+a1 = 0.0005         # m^-1.s^-1
+a2 = 0.016          # m^3.kg^-1
 
 max_nb_of_layers = 25
 
@@ -44,7 +44,9 @@ jj = 0
 # Meteorological forcing
 
 if use_true_met:
-    met_time, met_temp, met_wind = little_awk_functions.get_met_forcing()
+    met_time, met_temp, met_wind = little_awk_functions.get_met_forcing(simulation_start_date='2022-10-07 00:00:00',
+                        file_start_date='2022-10-07 00:00:00',
+                        file_name='/home/mabonnet/Desktop/data/Data_2023/finse_meteo_obs.csv')
 else:
     met_time, met_temp, met_wind = [0], [None], [None]
 

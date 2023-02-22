@@ -5,7 +5,9 @@ Typical pipeline once these files are ready:
 
 1. Apply the tools
 - Make sure all timestamps contain data > notebook 01
+- Create the netcdf files containing the filled data > notebook 00
 - Run a first simulation > notebook 02
+- Predict 2023 snowpack ineer structure > notebook 03
 
 2. Analyze results
 - Identify "marker" layers using the meteorological data > notebook 11
