@@ -3,7 +3,7 @@ import xarray as xr
 import little_awk_functions
 
 # Coordinates of the point of interest
-x_sel = 10
+x_sel = 10            # index   > x_isel TODO, also y
 y_sel = 10
 
 # Definition of the summer surface
@@ -11,18 +11,18 @@ start_summer_surface = '2022-10-07'
 end_summer_surface =  '2022-10-15'
 
 # Snow events detection parameters
-time_window_std = 25
-std_threshold = 0.022
+time_window_std = 25             # TODO index
+std_threshold = 0.022            # TODO mettre unite and description of what it does
 
 # Initial state for compaction/temperature model, with 0 layers
 
 # Adaptable parameters
 tsfc = -5           # degrees Celcius
-dt = 100            # s
-a1 = 0.0005         # m^-1.s^-1
-a2 = 0.016          # m^3.kg^-1
+dt = 100            # s                  # TODO describe a quoi correspondent params (dt pour simul pas entre lidar stamps)
+a1 = 0.0013         # m^-1.s^-1
+a2 = 0.021          # m^3.kg^-1
 
-max_nb_of_layers = 25
+max_nb_of_layers = 35
 
 # Choose options for simulation
 use_true_met = True

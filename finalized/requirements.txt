@@ -1,0 +1,5 @@
+matplotlib==3.5.2
+numpy==1.22.3
+pandas==1.4.3
+scipy==1.7.3
+xarray==0.20.1
