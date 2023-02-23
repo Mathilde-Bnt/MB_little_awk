@@ -18,6 +18,7 @@ Typical pipeline once these files are ready:
 3. Make figures
 - Illustrate the detection of snow events > notebook 21
 - Illustrate the general match of simulated layers and lidar signal > notebook 02
+==== BASE ====
 - Make a simulated snowpit to compare to experimental images > notebook 23
 
 ## conpilation code fortran
