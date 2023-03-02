@@ -2,9 +2,8 @@
 # =========================== Imports required ========================================
 # =====================================================================================
 
-import ddensity       # TODO complete README describe a quoi servent chaque fichier
+import ddensity
 import snowtemp
-import ddensity_ice
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -131,16 +130,16 @@ def define_summer_surface(ds, start, end):
 # =========================== Detecting snow events ========================================
 # ==========================================================================================
 
-def get_snow_events(ds, x_sel, y_sel, time_window_std, std_threshold):
+def get_snow_events(ds, x_isel, y_isel, time_window_std, std_threshold):
     '''
     Function that computes the dates of start and end times of snow events (snow accumulation and erosion)
     The events are defined as periods during which the snow depth rolling standard deviation is higher than 
     a given threshold
     We distinguish between accumulation and erosion of snow by looking at the snow depth before and after the event
     Args:
-        ds: clean dataset with 'snow_surface' variable
-        x_sel: x coordinate of the point of interest (index)
-        y_sel: y coordinate of the point of interest (index)
+        ds: clean dataset with 'snow_depth' variable
+        x_isel: x coordinate of the point of interest (index)
+        y_isel: y coordinate of the point of interest (index)
         time_window_std: size of the rolling window to compute standard deviation
         std_threshold: standard deviation threshold above which the curve is considered to have strong variations > snow event
     Returns:
@@ -150,7 +149,7 @@ def get_snow_events(ds, x_sel, y_sel, time_window_std, std_threshold):
         end_erosion_indices: list of indices (in ds) of the times corresponding to the end of an erosion event
     '''
     # Compute standard deviation values around each point
-    stdev = ds.isel(x=x_sel, y=y_sel).snow_surface.rolling(time=time_window_std, center=True).std(dim='time').values
+    stdev = ds.isel(x=x_isel, y=y_isel).snow_depth.rolling(time=time_window_std, center=True).std(dim='time').values
     
     # Define snow events' timing
     snow_events_occurrences = stdev > std_threshold   # booleans
@@ -167,8 +166,8 @@ def get_snow_events(ds, x_sel, y_sel, time_window_std, std_threshold):
         start_date = start_time_indices[index]
         end_date = end_time_indices[index]
     
-        start_snow_height = float(ds.snow_surface.isel(x=x_sel, y=y_sel, time=start_date))
-        end_snow_height = float(ds.snow_surface.isel(x=x_sel, y=y_sel, time=end_date))
+        start_snow_height = float(ds.snow_depth.isel(x=x_isel, y=y_isel, time=start_date))
+        end_snow_height = float(ds.snow_depth.isel(x=x_isel, y=y_isel, time=end_date))
     
         if start_snow_height < end_snow_height:
             # Accumulation if the snow height rises during the event
@@ -182,16 +181,16 @@ def get_snow_events(ds, x_sel, y_sel, time_window_std, std_threshold):
     return(start_accumulation_indices, start_erosion_indices, end_accumulation_indices, end_erosion_indices)
 
 
-def get_change_in_snow_depth(ds, start_events, end_events, index_of_event, x_sel, y_sel):
+def get_change_in_snow_depth(ds, start_events, end_events, index_of_event, x_isel, y_isel):
     '''
     Function to compute snow height difference (absolute value) before and after an event
     Args:
-        ds: dataset containing the snow depth data ('snow_surface' variable)
+        ds: dataset containing the snow depth data ('snow_depth' variable)
         start_events: list of time indices at which the events of interest (accumulation or erosion) started
         end_events: list of time indices at which the events of interest (accumulation or erosion) ended
         index_of_event: index of the event of interest in the lists of time indices
-        x_sel: index of the x-coordinate of the point of interest
-        y_sel: index of the y-coordinate of the point of interest
+        x_isel: index of the x-coordinate of the point of interest
+        y_isel: index of the y-coordinate of the point of interest
     Returns:
         difference in snow depth between the start and end of the event
     '''
@@ -200,8 +199,8 @@ def get_change_in_snow_depth(ds, start_events, end_events, index_of_event, x_sel
     end_date = end_events[index_of_event]
     
     # Get snow heights at start and end of event
-    start_snow_height = float(ds.snow_surface.isel(x=x_sel, y=y_sel, time=start_date))
-    end_snow_height = float(ds.snow_surface.isel(x=x_sel, y=y_sel, time=end_date))
+    start_snow_height = float(ds.snow_depth.isel(x=x_isel, y=y_isel, time=start_date))
+    end_snow_height = float(ds.snow_depth.isel(x=x_isel, y=y_isel, time=end_date))
     difference = abs(end_snow_height - start_snow_height)
     
     return(difference)
@@ -211,7 +210,7 @@ def get_change_in_snow_depth(ds, start_events, end_events, index_of_event, x_sel
 # =========================== Simulating the snowpack evolution ========================================
 # ======================================================================================================
 
-def get_met_forcing(simulation_start_date, file_start_date, file_name):         # TODO recoder en pandas
+def get_met_forcing(simulation_start_date, file_start_date, file_name):
     '''
     Function to get surface temperature and wind speed forcing from meteorological files
     Args:
@@ -231,12 +230,6 @@ def get_met_forcing(simulation_start_date, file_start_date, file_name):         
     air_temp_series = []
     surf_temp_series = []
     wind_speed_series = []
-
-    # TODO
-    # df = pd.read_csv()
-    # df.resample('100S').interploate()
-    # df['2022-12-10':'2023-01-69']
-    # df.time - df.time.iloc[0]
 
     with open(file_name) as met_data:
         reader = csv.reader(met_data)
@@ -277,14 +270,46 @@ def get_met_forcing(simulation_start_date, file_start_date, file_name):         
     return(met_time_data, met_temp_data, met_wind_data)
 
 
-def is_detected_ice(ds, x_sel, y_sel, end_events, start_events, index_of_end_event, index_of_start_event, slope_threshold, min_duration_in_s):
+def get_met_forcing_df(met_file_name, dt, simulation_start_date):
+    '''
+    Function to get surface temperature, wind speed forcing and new snow density from meteorological files in a dataframe
+    Args:
+        file_name: string, path to the meteorological csv file, expected to be extracted from seklima.no website, and containing
+                Time, Air_temp and Wind_speed data
+        dt: time in seconds between two simulation iterations
+        simulation_start_date: date of start of simulation in pd.datetime format
+    Returns:
+        met_df: dataframe containing the interpolated meteorological data to match simuation timestamps (time in pd.datetime format, air temperature(degrees Celcius),
+                wind speed (m.s^-1) and new snow density (kg.m^⁻3)), indices are the time in seconds since the start of the simulation
+    '''
+    print('WARNING: check your meteorological file is in the right format (cf docstring of get_met_forcing())')
+    
+    met_df = pd.read_csv(met_file_name)
+    met_df['Time'] = pd.to_datetime(met_df['Time'], format='%d.%m.%Y %H:%M')
+    met_df.Wind_speed.loc[met_df.Wind_speed == '-'] = 0
+    met_df.Wind_speed = met_df.Wind_speed.astype(float)
+    met_df.Air_temp = met_df.Air_temp.astype(float)
+    
+    met_df = met_df.set_index('Time')
+    met_df = met_df.resample(str(dt)+'S').interpolate()
+    
+    met_df['Ro_new_snow'] = 150
+    met_df.Ro_new_snow.loc[met_df.Wind_speed >= 6] = 250
+
+    met_df['Time_since_start'] = (met_df.index - simulation_start_date).total_seconds()
+    met_df = met_df.set_index('Time_since_start')
+    
+    return(met_df)
+
+
+def is_detected_ice(ds, x_isel, y_isel, end_events, start_events, index_of_end_event, index_of_start_event, slope_threshold, min_duration_in_s):
     '''
     Function that determines whether ice formed during a compaction period (between two distinct snow events), based on the flatness
     of the lidar curve (flat = ice)
     Args:
         ds: clean dataset
-        x_sel: index of the x-coordinate of the point of interest
-        y_sel: index of the y-coordinate of the point of interest
+        x_isel: index of the x-coordinate of the point of interest
+        y_isel: index of the y-coordinate of the point of interest
         end_events: list of time indices at which the events of interest (accumulation or erosion,
                 corresponding to the event right before compaction time period) ended
         start_events: list of time indices at which the events of interest (accumulation or erosion,
@@ -301,8 +326,8 @@ def is_detected_ice(ds, x_sel, y_sel, end_events, start_events, index_of_end_eve
     end_date_of_ice = start_events[index_of_start_event]
     
     # Get the change in snow height during the period
-    start_snow_height = float(ds.snow_surface.isel(x=x_sel, y=y_sel, time=start_date_of_ice))
-    end_snow_height = float(ds.snow_surface.isel(x=x_sel, y=y_sel, time=end_date_of_ice))
+    start_snow_height = float(ds.snow_depth.isel(x=x_isel, y=y_isel, time=start_date_of_ice))
+    end_snow_height = float(ds.snow_depth.isel(x=x_isel, y=y_isel, time=end_date_of_ice))
     snow_level_change = abs(end_snow_height - start_snow_height)
     
     duration_of_ice = (float(ds.time.values[end_date_of_ice]) - float(ds.time.values[start_date_of_ice])) / 1000000000  # in s
@@ -321,13 +346,10 @@ def is_detected_ice(ds, x_sel, y_sel, end_events, start_events, index_of_end_eve
             return(False)
 
 
-def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulation_times, end_erosion_times,
+def simulate_snowpack_evolution(ds, x_isel, y_isel, nb_iterations, max_nb_of_layers, end_accumulation_times, end_erosion_times,
                                 start_accumulation, end_accumulation, start_erosion, end_erosion,
                                 jj, dt, ro_layer, ro_water, ro_ice, t_old, tf, tsfc_default, dy_snow, age_layers, gamma, cp_snow,
-                                melt_flag, a1, a2, met_temp_data=[None], met_wind_data=[None], met_time_data=[0],
-                                fit_top_of_snowfall_to_curve=False, erode_several_layers=False, detect_ice=False,
-                                start_accumulation_times=None, start_erosion_times=None, a1_vector=None, slope_threshold=None,
-                                min_duration_in_s=None):
+                                melt_flag, a1, a2, met_temp_data=[None], met_wind_data=[None], met_time_data=[0]):
     '''
     Function that simulates the evolution of the snowpack over a certain period of time: at each timestamp, the new density, height and
     temperature of each layer is computed, according to SnowModel (2006)
@@ -335,9 +357,10 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
     detect ice layers based on the flatness of the lidar curve (and stop their compaction)
     Args:
         ds: clean dataset (x, y, time)
-        x_sel: x-coordinate of the point of interest (index)
-        y_sel: y-coordinate of the point of interest (index)
+        x_isel: x-coordinate of the point of interest (index)
+        y_isel: y-coordinate of the point of interest (index)
         nb_iterations: number of iterations
+        max_nb_of_layers: int, maximum number of layers that can be detected at the point of interest
         
         end_accumulation_times: list of ending times of accumulations in seconds since data starting date
         end_erosion_times: list of ending times of erosions in seconds since data starting date
@@ -371,38 +394,24 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
         erode_several_layers: boolean, if True the erosions may affect more than just the top layer
                 (remove the measured snow height difference from the simulated layers), default False
 
-        detect_ice: boolean, if True, flat portions of the lidar curve are detected as ice and stop being compacted, default False
-        start_accumulation_times:  list of starting times of accumulations in seconds since data starting date,
-                useful for the ice detection option, default None
-        start_erosion_times:  list of starting times of erosions in seconds since data starting date,
-                useful for the ice detection option, default None
-        a1_vector: array containing the a1 values (m^-1.s^-1) for each layer (null for ice layers that do not compact),
-                useful for the ice detection option, default None
-        slope_threshold: value below which the slope of a compaction period is considered negligeable (m.s^-1),
-                useful for the ice detection option, default None
-        min_duration_in_s: minimum duration of an ice event (s), under which we consider there is no ice formation,
-                useful for the ice detection option, default None
-
     Returns:
         ro_layer_evolution: list of the states of layers' density (kg.m^-3) at each timestamp,
                 format [[ro_layer_1, ro_layer_2, ro_layer_3, ...], [...], ...]
-        thickness_evolution: list of the states of layers' thickness (m) through time,
-                format [[thickness_layer_1, thickness_layer_2, thickness_layer_3, ...]_timestamp_1, [...]_timestamp_2, [...], ...]
-        temperature_evolution: list of the states of layers' temperature (degrees Celcius) through time,
-                format [[temp_layer_1, temp_layer_2, temp_layer_3, ...]_timestamp_1, [...]_timestamp_2, [...], ...]
-        ice_layers_times: list of the simulation times' indices at which ice was detected
+        thickness_evolution: list of the states of layers' thickness (m) at each timestamp,
+                format [[thickness_layer_1, thickness_layer_2, thickness_layer_3, ...], [...], ...]
+        temperature_evolution: list of the states of layers' temperature (degrees Celcius) at each timestamp,
+                format [[temp_layer_1, temp_layer_2, temp_layer_3, ...], [...], ...]
+        age_layers_evolution: list of the age of each layer (seconds until the end of the simulation) at each timestamp,
+                format [[age_layer_1, age_layer_2, age_layer_3, ...], [...], ...]
     '''
+
     # INITIALIZATION
 
-    # Check that all parameters are well defined for ice detection
-    if detect_ice:
-        if start_accumulation_times==None or start_erosion_times==None or a1_vector==None or slope_threshold==None or min_duration_in_s==None:
-            print('Values are missing for ice detection')
-            return()
-        ice_layers_times = []
-
     # Initialize arrays to keep track of variables in time
-    ro_layer_evolution, thickness_evolution, temperature_evolution = [], [], []
+    ro_layer_evolution = np.zeros((nb_iterations, max_nb_of_layers))
+    thickness_evolution = np.zeros((nb_iterations, max_nb_of_layers))
+    temperature_evolution = np.zeros((nb_iterations, max_nb_of_layers))
+    age_layers_evolution = np.zeros((nb_iterations, max_nb_of_layers))
 
     # Initialize surface temperature
     if met_temp_data[0] != None:
@@ -418,10 +427,6 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
 
     # Initialize indices of next accumulation/erosion events coming up (updated when their time is past)
     accumulation_index, erosion_index, temperature_index, wind_index = 0, 0, 0, 0
-
-    # Initialize ice detection marker
-    if detect_ice:         # TODO null_compaction/zero_compaction
-        is_iced = False
     
 
     # RUN MODEL
@@ -429,8 +434,8 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
     for i in range(nb_iterations):
 
         # Update surface temperature if needed
-        if temperature_index<len(met_temp_data) and met_time_data[temperature_index]!=None and i*dt>=met_time_data[temperature_index]:      # TODO put met_data in np form > &/| instead of and/or
-            if met_temp_data[temperature_index] != None:     # TODO put met in pd to deal with datetimes
+        if temperature_index<len(met_temp_data) and met_time_data[temperature_index]!=None and i*dt>=met_time_data[temperature_index]:
+            if met_temp_data[temperature_index] != None:
                 tsfc = float(met_temp_data[temperature_index])
             temperature_index += 1
         
@@ -442,38 +447,11 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
             else:
                 new_snow_ro = 150
             wind_index += 1
-            # TODO in met_data df['ro_new_snow'] = 150
-            # df.ro_new_snow.loc[df.ws>=6] = 250
 
         # Detection of accumulations
         if accumulation_index<len(end_accumulation_times) and i*dt>=end_accumulation_times[accumulation_index]:     # if an accumulation was passed
-
-            if detect_ice:
-                if accumulation_index+1 >= len(start_accumulation_times) and erosion_index >= len(start_erosion_times):   # got to the end
-                    if is_detected_ice(ds, x_sel, y_sel, end_accumulation, range(len(ds.time.values)), accumulation_index, -1, slope_threshold, min_duration_in_s):
-                        is_iced=True
-                elif accumulation_index+1 < len(start_accumulation_times) and (erosion_index>=len(start_erosion_times)
-                            or start_accumulation_times[accumulation_index+1]<start_erosion_times[erosion_index]):  # next event will be an accumulation
-                    if is_detected_ice(ds, x_sel, y_sel, end_accumulation, start_accumulation, accumulation_index, accumulation_index+1, slope_threshold, min_duration_in_s):
-                        is_iced=True
-                elif erosion_index < len(start_erosion_times) and (accumulation_index+1>=len(start_accumulation_times)
-                            or start_accumulation_times[accumulation_index+1]>start_erosion_times[erosion_index]):  # next event will be an erosion
-                    if is_detected_ice(ds, x_sel, y_sel, end_accumulation, start_erosion, accumulation_index, erosion_index, slope_threshold, min_duration_in_s):
-                        is_iced=True
-                    
-                if is_iced:
-                    ice_layers_times.append(i)
-                    for i in range(jj+1):
-                        a1_vector[i] = 0
-                else:
-                    a1_vector[jj] = a1
-                is_iced = False
             
-            if fit_top_of_snowfall_to_curve:
-                snow_depth_total = sum(dy_snow[i] for i in range(0,jj))
-                ddepth = float(ds.snow_surface.isel(x=x_sel, y=y_sel, time=end_accumulation[accumulation_index])) - snow_depth_total
-            else:
-                ddepth = get_change_in_snow_depth(ds, start_accumulation, end_accumulation, accumulation_index, x_sel, y_sel)
+            ddepth = get_change_in_snow_depth(ds, start_accumulation, end_accumulation, accumulation_index, x_isel, y_isel)
             ro_layer[jj] = new_snow_ro
             t_old[jj] = tsfc
             dy_snow[jj] = ddepth
@@ -488,39 +466,8 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
         # Detection of erosions
         if erosion_index<len(end_erosion_times) and i*dt>=end_erosion_times[erosion_index]:     # if an erosion was passed
 
-            if detect_ice:
-                if accumulation_index >= len(start_accumulation_times) and erosion_index+1 >= len(start_erosion_times):   # got to the end
-                    if is_detected_ice(ds, x_sel, y_sel, end_erosion, range(len(ds.time.values)), erosion_index, -1, slope_threshold, min_duration_in_s):
-                        is_iced=True
-                elif accumulation_index < len(start_accumulation_times) and (erosion_index+1>=len(start_erosion_times)
-                            or start_accumulation_times[accumulation_index]<start_erosion_times[erosion_index+1]):   # next event will be an accumulation
-                    if is_detected_ice(ds, x_sel, y_sel, end_erosion, start_accumulation, erosion_index, accumulation_index, slope_threshold, min_duration_in_s):
-                        is_iced=True
-                elif erosion_index+1 < len(start_erosion_times) and (accumulation_index>=len(start_accumulation_times)
-                            or start_accumulation_times[accumulation_index]>start_erosion_times[erosion_index+1]):   # next event will be an erosion
-                    if is_detected_ice(ds, x_sel, y_sel, end_erosion, start_erosion, erosion_index, erosion_index+1, slope_threshold, min_duration_in_s):
-                        is_iced=True
-                    
-                if is_iced:
-                    ice_layers_times.append(i)
-                    for i in range(jj+1):
-                        a1_vector[i] = 0
-                else:
-                    a1_vector[jj] = a1
-                is_iced = False
-
-            ddepth = get_change_in_snow_depth(ds, start_erosion, end_erosion, erosion_index, x_sel, y_sel)
+            ddepth = get_change_in_snow_depth(ds, start_erosion, end_erosion, erosion_index, x_isel, y_isel)
             erosion_index += 1     # next erosion that will come up
-            if erode_several_layers:
-                # Get rid of all the layers that are smaller than the measured loss of snow height
-                while jj>0 and dy_snow[jj-1] <= ddepth:
-                    ddepth -= dy_snow[jj-1]
-                    jj -= 1
-                    dy_snow[jj] = 0
-                    ro_layer[jj] = 0
-                    t_old[jj] = 0
-                    age_layers[jj] = 0
-                    melt_flag[jj] = 0
             if jj>0:
                 if dy_snow[jj-1] > ddepth:
                     dy_snow[jj-1] = dy_snow[jj-1] - ddepth
@@ -533,30 +480,148 @@ def simulate_snowpack_evolution(ds, x_sel, y_sel, nb_iterations, end_accumulatio
                     melt_flag[jj] = 0
     
         # Update layers' parameters (fortran code model)
-        if detect_ice:
-            ro_layer, dy_snow = ddensity_ice.ddensity_ml(ro_layer, tf, dt, ro_water, ro_ice, t_old, jj, dy_snow, a1_vector, a2)
-        else:
-            ro_layer, dy_snow = ddensity.ddensity_ml(ro_layer, tf, dt, ro_water, ro_ice, t_old, jj, dy_snow, a1, a2)
+        ro_layer, dy_snow = ddensity.ddensity_ml(ro_layer, tf, dt, ro_water, ro_ice, t_old, jj, dy_snow, a1, a2)
         t_old = snowtemp.snowtemp_ml(gamma, t_old, tsfc, jj, dt, ro_layer, cp_snow, tf, dy_snow, melt_flag)
-    
-    # TODO take out for loop > pd and put for loop in f95
 
         # Keep track of events
-        ro_layer_evolution.append(ro_layer)    # TODO in np and fill-in lines/columns
-        thickness_evolution.append(dy_snow)
-        temperature_evolution.append(t_old)
+        ro_layer_evolution[i] = ro_layer
+        thickness_evolution[i] = dy_snow
+        temperature_evolution[i] = t_old
+        age_layers_evolution[i] = age_layers
         
-    if not detect_ice:
-        ice_layers_times = None
+    return(ro_layer_evolution, thickness_evolution, temperature_evolution, age_layers_evolution)
+
+
+def simulate_snowpack_evolution_df(ds, x_isel, y_isel, nb_iterations, max_nb_of_layers, end_accumulation_times, end_erosion_times,
+                                start_accumulation, end_accumulation, start_erosion, end_erosion,
+                                jj, dt, ro_layer, ro_water, ro_ice, t_old, tf, tsfc_default, dy_snow, age_layers, gamma, cp_snow,
+                                melt_flag, a1, a2, met_data=[None], use_true_met=False):
+    '''
+    Function that simulates the evolution of the snowpack over a certain period of time: at each timestamp, the new density, height and
+    temperature of each layer is computed, according to SnowModel (2006)
+    Options: use correct (rather than constant) meteorological forcing in dataframe form
+    Args:
+        ds: clean dataset (x, y, time)
+        x_isel: x-coordinate of the point of interest (index)
+        y_isel: y-coordinate of the point of interest (index)
+        nb_iterations: number of iterations
+        max_nb_of_layers: int, maximum number of layers that can be detected at the point of interest
         
-    return(ro_layer_evolution, thickness_evolution, temperature_evolution, ice_layers_times)
+        end_accumulation_times: list of ending times of accumulations in seconds since data starting date
+        end_erosion_times: list of ending times of erosions in seconds since data starting date
+        start_accumulation: list of the indices of starting times of accumulations in ds
+        end_accumulation: list of the indices of ending times of accumulations in ds
+        start_erosion: list of the indices of starting times of erosions in ds
+        end_erosion: list of the indices of ending times of erosions in ds
+        
+        jj: number of layers initially present
+        dt: timestep (s)
+        ro_layer(1*max_nb_of_layers) array containing density value (kg.m^-3) for each layer
+        ro_water: density of water (kg.m^-3)
+        ro_ice: density of ice (kg.m^-3)
+        t_old: (1*max_nb_of_layers) array containing temperature value (degrees Celcius) for each layer
+        tf: ice fusion temperature (degrees Celcius)
+        tsfc_default: surface temperature (degrees Celcius)
+        dy_snow: (1*max_nb_of_layers) array containing thickness value (m) for each layer
+        age_layers: (1*max_nb_of_layers) array containing age (s) of each layer
+        gamma: (1*max_nb_of_layers) array containing zeros
+        cp_snow: thermal capacity of snow (J.kg^-1.K^-1)
+        melt_flag: (1*max_nb_of_layers) array containing melt value (1 or 0) for each layer
+        a1, a2: exponential parameters, empirically calibrated, a1 in m^-1.s^-1, a2 in m^3.kg^-1
+
+        met_data: dataframe as constructed in the get_met_forcing_df() function, default None
+        use_true_met: boolean, if True then met_data is assumed not to be None, and is used 
+                as forcing in the simulation, default False
+
+    Returns:
+        ro_layer_evolution: list of the states of layers' density (kg.m^-3) at each timestamp,
+                format [[ro_layer_1, ro_layer_2, ro_layer_3, ...], [...], ...]
+        thickness_evolution: list of the states of layers' thickness (m) at each timestamp,
+                format [[thickness_layer_1, thickness_layer_2, thickness_layer_3, ...], [...], ...]
+        temperature_evolution: list of the states of layers' temperature (degrees Celcius) at each timestamp,
+                format [[temp_layer_1, temp_layer_2, temp_layer_3, ...], [...], ...]
+        age_layers_evolution: list of the age of each layer (seconds until the end of the simulation) at each timestamp,
+                format [[age_layer_1, age_layer_2, age_layer_3, ...], [...], ...]
+    '''
+
+    # INITIALIZATION
+
+    # Initialize arrays to keep track of variables in time
+    ro_layer_evolution = np.zeros((nb_iterations, max_nb_of_layers))
+    thickness_evolution = np.zeros((nb_iterations, max_nb_of_layers))
+    temperature_evolution = np.zeros((nb_iterations, max_nb_of_layers))
+    age_layers_evolution = np.zeros((nb_iterations, max_nb_of_layers))
+
+    # Initialize surface temperature and snow density
+    if use_true_met:
+        tsfc = float(met_data.Air_temp[0])
+        new_snow_ro = float(met_data.Ro_new_snow[0])
+    else:
+        tsfc = tsfc_default
+        new_snow_ro = 150
+
+    # Initialize indices of next accumulation/erosion events coming up (updated when their time is past)
+    accumulation_index, erosion_index = 0, 0
+    
+
+    # RUN MODEL
+
+    for i in range(nb_iterations):
+
+        # Update surface temperature and snow density if needed
+        if use_true_met and i < max(met_data.index):
+            tsfc = float(met_data.Air_temp[i*dt])
+            new_snow_ro = float(met_data.Ro_new_snow[i*dt])
+
+        # Detection of accumulations
+        if accumulation_index<len(end_accumulation_times) and i*dt>=end_accumulation_times[accumulation_index]:     # if an accumulation was passed
+            
+            ddepth = get_change_in_snow_depth(ds, start_accumulation, end_accumulation, accumulation_index, x_isel, y_isel)
+            ro_layer[jj] = new_snow_ro
+            t_old[jj] = tsfc
+            dy_snow[jj] = ddepth
+            age_layers[jj] = (nb_iterations-i) * dt     # age in seconds at end of simulation
+            if t_old[jj] <= 0:
+                melt_flag[jj] = 0
+            else:
+                melt_flag[jj] = 1
+            jj += 1
+            accumulation_index += 1     # next accumulation that will come up
+    
+        # Detection of erosions
+        if erosion_index<len(end_erosion_times) and i*dt>=end_erosion_times[erosion_index]:     # if an erosion was passed
+
+            ddepth = get_change_in_snow_depth(ds, start_erosion, end_erosion, erosion_index, x_isel, y_isel)
+            erosion_index += 1     # next erosion that will come up
+            if jj>0:
+                if dy_snow[jj-1] > ddepth:
+                    dy_snow[jj-1] = dy_snow[jj-1] - ddepth
+                else:
+                    jj -= 1
+                    dy_snow[jj] = 0
+                    ro_layer[jj] = 0
+                    t_old[jj] = 0
+                    age_layers[jj] = 0
+                    melt_flag[jj] = 0
+    
+        # Update layers' parameters (fortran code model)
+        ro_layer, dy_snow = ddensity.ddensity_ml(ro_layer, tf, dt, ro_water, ro_ice, t_old, jj, dy_snow, a1, a2)
+        t_old = snowtemp.snowtemp_ml(gamma, t_old, tsfc, jj, dt, ro_layer, cp_snow, tf, dy_snow, melt_flag)
+
+        # Keep track of events
+        ro_layer_evolution[i] = ro_layer
+        thickness_evolution[i] = dy_snow
+        temperature_evolution[i] = t_old
+        age_layers_evolution[i] = age_layers
+        
+    return(ro_layer_evolution, thickness_evolution, temperature_evolution, age_layers_evolution)
 
 
 # ====================================================================================================
 # =========================== Plotting the snowpack evolution ========================================
 # ====================================================================================================
 
-def plot_simul_and_signal(ds, x_sel, y_sel, thickness_evolution, nb_layers_to_plot, data_start_date, dt, nb_iterations,
+def plot_simul_and_signal(ds, x_isel, y_isel, thickness_evolution, nb_layers_to_plot, data_start_date, dt, nb_iterations,
                           start_accumulation, end_accumulation, start_erosion, end_erosion, ice_layers_times=None,
                           fig_title='Comparison between lidar-measured and simulated snow depth', save_file=False,
                           fig_file_name='my_fig.png', fig_figsize=(16, 7), show_layers_in_legend=False):
@@ -564,8 +629,8 @@ def plot_simul_and_signal(ds, x_sel, y_sel, thickness_evolution, nb_layers_to_pl
     Function to plot the simulated snowpack layers and lidar signal on the same plot
     Args:
         ds: clean dataset
-        x_sel: x-coordinate of the point of interest
-        y_sel: y-coordinate of the point of interest
+        x_isel: x-coordinate of the point of interest
+        y_isel: y-coordinate of the point of interest
         thickness_evolution: list of the states of layers' thickness (m) at each timestamp, 
                 format [[thickness_layer_1, thickness_layer_2, thickness_layer_3, ...], [...], ...]
         nb_layers_to_plot: number of layers to plot, starting from the bottom
@@ -613,13 +678,13 @@ def plot_simul_and_signal(ds, x_sel, y_sel, thickness_evolution, nb_layers_to_pl
             plt.plot(times[time_index], layers[-1][time_index]+0.001, c='y', marker='*', markersize=15, label='ice layer detected')
     
     # Plot the lidar signal
-    ds.isel(x=x_sel, y=y_sel).snow_surface.plot(c='k', alpha=0.2, label='lidar signal')
+    ds.isel(x=x_isel, y=y_isel).snow_depth.plot(c='k', alpha=0.2, label='lidar signal')
 
     # Plot the start and end of detected snow events on the lidar curve
-    ds.isel(x=x_sel, y=y_sel, time=start_accumulation).snow_surface.plot(c='b', marker='^', markersize=6, linestyle='None', label='start accum.')
-    ds.isel(x=x_sel, y=y_sel, time=end_accumulation).snow_surface.plot(c='g', marker='^', markersize=6, linestyle='None', label='end accum.')
-    ds.isel(x=x_sel, y=y_sel, time=start_erosion).snow_surface.plot(c='m', marker='v', markersize=6, linestyle='None', label='start erosion')
-    ds.isel(x=x_sel, y=y_sel, time=end_erosion).snow_surface.plot(c='r', marker='v', markersize=6, linestyle='None', label='end erosion')
+    ds.isel(x=x_isel, y=y_isel, time=start_accumulation).snow_depth.plot(c='b', marker='^', markersize=6, linestyle='None', label='start accum.')
+    ds.isel(x=x_isel, y=y_isel, time=end_accumulation).snow_depth.plot(c='g', marker='^', markersize=6, linestyle='None', label='end accum.')
+    ds.isel(x=x_isel, y=y_isel, time=start_erosion).snow_depth.plot(c='m', marker='v', markersize=6, linestyle='None', label='start erosion')
+    ds.isel(x=x_isel, y=y_isel, time=end_erosion).snow_depth.plot(c='r', marker='v', markersize=6, linestyle='None', label='end erosion')
     
     plt.ylabel('snow depth (m)')
     plt.xlabel('time (date)')
