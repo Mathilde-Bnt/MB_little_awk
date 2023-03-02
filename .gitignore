@@ -27,6 +27,7 @@ falls_detection_and_snow_model/measured_vs_simul_snow_depth.png
 
 /finalized/*.nc
 /finalized/*.pckl
+/finalized/*.npy
 
 /finalized_in_dev/
 *.nc
