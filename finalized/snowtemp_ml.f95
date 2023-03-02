@@ -43,8 +43,9 @@ subroutine snowtemp_ml(gamma, T_old, Tsfc, JJ, dt, ro_layer, Cp_snow, Tf, dy_sno
 	! Define the upper and lower boundary conditions:
         T_N = Tsfc
         bc_N = aN(JJ) * T_N
-        bc_S = 0.0
-        aS(1) = 0.0
+    ! Snow-ground interface temperature is -1.5 C (average of observations in Finse 2022-2023):
+        T_S = -1.5
+        bc_S = aS(1) * T_S
         
         ! Provide the source terms: force the source terms to produce Tf at the 
         ! positions where melting occurred during this time step:
@@ -65,8 +66,8 @@ subroutine snowtemp_ml(gamma, T_old, Tsfc, JJ, dt, ro_layer, Cp_snow, Tf, dy_sno
         call trisolve(T_new, A_sub, A_main, A_super, b_vector, JJ, nz_max)
         
     elseif (JJ.eq.1) then
-    	! Assume that the snow-ground interface temperature is -1.0 C:
-        Tsg = Tf - 1.0
+    	! Assume that the snow-ground interface temperature is -1.5 C (average of observations in Finse 2022-2023):
+        Tsg = Tf - 1.5
         T_new(1) = 0.5 * (Tsg + Tsfc)
     end if
     

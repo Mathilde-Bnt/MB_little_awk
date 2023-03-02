@@ -1,0 +1,30 @@
+This file contains a list of to-dos and suggestions for the future of this project, for each file.
+
+GENERAL:
+- run Crocus/... and force it to get a final microstructure that matches the one on NIR images for confirmation
+- wind erosions stop when they reach a harder layer > this could give us information of where hard layers are
+- discretize NIR images into gray values, define layers at the points of the simulated snowpits, plot both simulated and discretized NIR together for comparison
+- do this also for the 2021 data that is more contrasted
+- test the climate model hypothesis: is an 'average point' really representative of the average of points?
+- juxtapose lidar curves from neighbouring points to see if abrupt/strange events are signal or noise
+- add Fortran subroutines from latest version (GET_THERMAL_CONDUCTIVITY, GET_GRAIN_SIZE_SNTHERM) > convert to Fortran 95 and compile with f2py
+
+little_awk_functions:
+- the new version of snowpack_evolution (df, taking the meteorological input data as a dataframe) is much slower than the previous one > fix that, make it linear using pandas?
+
+01-Filling_time_gaps.ipynb:
+- make a function of the whole process
+
+12-Sensitivity_tests.ipynb:
+- look at more decimals to discriminate p-correl/rmse in the sensitivity analysis
+
+14-Validation.ipynb:
+- interpolate temperature values
+- make statistics from several points
+
+23-Artificial_snowpit_figure.ipynb:
+- figure out why if y_min=y_max all values are nan in data_set_used
+- get all figures with the same colorbar values (?)
+- add ticks on the colorbars to be able to read the layers' ages directly
+- in creation of dataset to store the outputs: convert the time into pd.datetime directly. add units to parameters and data.
+- take a slice of the snowpack that is parallel to the wind direction for more intuitiveness
