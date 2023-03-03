@@ -8,9 +8,11 @@ GENERAL:
 - test the climate model hypothesis: is an 'average point' really representative of the average of points?
 - juxtapose lidar curves from neighbouring points to see if abrupt/strange events are signal or noise
 - add Fortran subroutines from latest version (GET_THERMAL_CONDUCTIVITY, GET_GRAIN_SIZE_SNTHERM) > convert to Fortran 95 and compile with f2py
+- check the meteorological forcing is appropriate
 
 little_awk_functions:
-- the new version of snowpack_evolution (df, taking the meteorological input data as a dataframe) is much slower than the previous one > fix that, make it linear using pandas?
+- get all files up to date with the latest version of simulate_snowpack_evolution_df() and get_met_forcing_df()
+- give the date format as a parameter of get_met_forcing_df()
 
 01-Filling_time_gaps.ipynb:
 - make a function of the whole process
@@ -21,6 +23,7 @@ little_awk_functions:
 14-Validation.ipynb:
 - interpolate temperature values
 - make statistics from several points
+- automatically deal with differences in length of profiles
 
 23-Artificial_snowpit_figure.ipynb:
 - figure out why if y_min=y_max all values are nan in data_set_used

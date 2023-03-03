@@ -1,0 +1,90 @@
+The netcdf files used for the simulations were obtained by applying the gridding procedure developed by S. Filhol, L. Girod, L. Geffroy, G. Boraud and C. Larose to output files from the Livox lidar installed in Finse.
+
+An approximate rotation matrix was used, the same for both years.
+
+The data was then "filled-in", which means that timestamps were created and deleted in order to keep timestamps every 15 minutes exactly. The data was not interpolated but filled into the new timestamps with an ffill()-like method.
+
+Parameters used:
+
+For the 2021-2022 winter data:
+
+summer surface is defined from 2021-07-01 to 2021-07-02.
+
+
+
+
+
+
+
+For the 2022-2023 winter data:
+
+summer surface is defined from 2022-10-07 to 2022-10-15.
+a1 =  m^-1.s^-1
+a2 =  m^3.kg^-1
+time_window_std = 25
+std_threshold = 0.022 m
+
+Pit nb 1: 
+ 
+ Parameters:
+ Pit point coords ((x, y) in m, from CloudCompare): (-5.75, -0.35)
+ Pit left extremity ((x, y) in m, from CloudCompare): (-5.87, -1.13)
+ Pit right extremity ((x, y) in m, from CloudCompare): (-5.56, 0.45)
+ 
+
+ 
+Pit nb 2: 
+ 
+ Parameters:
+ Pit point coords ((x, y) in m, from CloudCompare): (-6.35, -0.25)
+ Pit left extremity ((x, y) in m, from CloudCompare): (-6.32, -1.05)
+ Pit right extremity ((x, y) in m, from CloudCompare): (-6.11, 0.59)
+ 
+
+ 
+Pit nb 3: 
+ 
+ Parameters:
+ Pit point coords ((x, y) in m, from CloudCompare): (-6.75, -0.15)
+ Pit left extremity ((x, y) in m, from CloudCompare): (-6.76, -0.95)
+ Pit right extremity ((x, y) in m, from CloudCompare): (-6.53, 0.60)
+ 
+
+ 
+Pit nb 4: 
+ 
+ Parameters:
+ Pit point coords ((x, y) in m, from CloudCompare): (-7.35, -0.05)
+ Pit left extremity ((x, y) in m, from CloudCompare): (-7.41, -0.78)
+ Pit right extremity ((x, y) in m, from CloudCompare): (-7.27, 0.61)
+ 
+
+ 
+Pit nb 5: 
+ 
+ Parameters:
+ Pit point coords ((x, y) in m, from CloudCompare): (-7.75, 0.15)
+ Pit left extremity ((x, y) in m, from CloudCompare): (-7.85, -0.66)
+ Pit right extremity ((x, y) in m, from CloudCompare): (-7.60, 0.69)
+ 
+
+ 
+Pit nb 6: 
+ 
+ Parameters:
+ Pit point coords ((x, y) in m, from CloudCompare): (-8.15, 0.05)
+ Pit left extremity ((x, y) in m, from CloudCompare): (-8.21, -0.65)
+ Pit right extremity ((x, y) in m, from CloudCompare): (-8.05, 0.79)
+ 
+
+ 
+Pit nb 7: 
+ 
+ Parameters:
+ Pit point coords ((x, y) in m, from CloudCompare): (-8.55, 0.15)
+ Pit left extremity ((x, y) in m, from CloudCompare): (-8.63, -0.55)
+ Pit right extremity ((x, y) in m, from CloudCompare): (-8.40, 0.81)
+ 
+
+ 
+
