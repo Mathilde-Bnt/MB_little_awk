@@ -34,7 +34,6 @@ tf = 0                           # degrees Celcius (fusion temperature of ice)
 ro_water = 1000                  # kg.m^-3 (density of water)
 ro_ice = 910                     # kg.m^-3 (density of ice)
 cp_snow = 2106                   # J.kg^-1.K^-1 (thermal capacity of snow)
-jj = 0                           # (initial number of layers)
 
 
 
